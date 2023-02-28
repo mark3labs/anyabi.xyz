@@ -1,0 +1,5 @@
+pb_data/
+pocketbase
+.env
+tmp/
+bin/

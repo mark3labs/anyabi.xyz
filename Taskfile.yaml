@@ -1,0 +1,23 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+
+  setup: pnpm --prefix ui install
+
+  backend_dev: air serve
+  
+  frontend_dev: pnpm --prefix ui dev
+
+  frontend_build: pnpm --prefix ui build
+  
+  dev:
+    deps: [backend_dev, frontend_dev]
+
+  build:
+    deps: [frontend_build]
+    cmds: 
+      - go build -o bin/anyabi
+
+  deploy: flyctl deploy
