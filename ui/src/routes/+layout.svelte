@@ -34,10 +34,15 @@
           <span class="text-2xl md:text-7xl font-bold">AnyABI</span>
         </div>
         <h2 class="text-md md:text-4xl">The easiest way to fetch an ABI.</h2>
-        <p class="md:!text-lg">
-          Quickly grab the ABI for <span class="font-bold">ANY</span> EVM smart contract on
+        <p class="md:!text-2xl">
+          Quickly grab the ABI for <span class="font-bold">ANY<sup>*</sup></span> EVM smart contract
+          on
           <span class="font-bold">ANY</span> EVM chain.
         </p>
+        <div class="text-xs mt-5">
+          * ABIs can only be retrieved for contracts that are verified on a block explorer like
+          Etherscan or on Sourcify
+        </div>
       </div>
     </div>
   </header>
