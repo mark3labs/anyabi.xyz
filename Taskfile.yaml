@@ -4,7 +4,10 @@ version: '3'
 
 tasks:
 
-  setup: pnpm --prefix ui install
+  setup: 
+    cmds:
+      - go mod download
+      - pnpm --prefix ui install
 
   backend_dev: air serve
   
@@ -16,7 +19,7 @@ tasks:
     deps: [backend_dev, frontend_dev]
 
   build:
-    deps: [frontend_build]
+    deps: [setup, frontend_build]
     cmds: 
       - go build -o bin/anyabi
 
