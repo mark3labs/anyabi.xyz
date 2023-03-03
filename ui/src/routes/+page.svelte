@@ -1,8 +1,9 @@
 <script lang="ts">
   import chains from '$lib/chains.json'
+  import Snippets from '$lib/components/Snippets.svelte'
   import hljs from 'highlight.js'
   import 'highlight.js/styles/github-dark.css'
-  import { CodeBlock, storeHighlightJs, Tab, TabGroup } from '@skeletonlabs/skeleton'
+  import { CodeBlock, storeHighlightJs } from '@skeletonlabs/skeleton'
   import { isAddress } from 'ethers'
   import { Pulse } from 'svelte-loading-spinners'
   import Typeahead from 'svelte-typeahead'
@@ -11,7 +12,6 @@
   storeHighlightJs.set(hljs)
 
   let abi: any
-  let tabSet = 0
 
   let form = {
     chainId: 1,
@@ -33,48 +33,7 @@
 </script>
 
 <div class="container mx-auto my-20 p-2">
-  <h3>Use the API</h3>
-  <p class="my-5">Use the API to fetch the ABI of any contract on any chain.</p>
-  <TabGroup>
-    <Tab bind:group={tabSet} name="tab1" value={0}>Curl</Tab>
-    <Tab bind:group={tabSet} name="tab2" value={1}>Typescript</Tab>
-    <Tab bind:group={tabSet} name="tab3" value={2}>Go</Tab>
-    <Tab bind:group={tabSet} name="tab3" value={3}>Python</Tab>
-    <Tab bind:group={tabSet} name="tab3" value={4}>Ruby</Tab>
-    <Tab bind:group={tabSet} name="tab3" value={5}>Rust</Tab>
-    <!-- Tab Panels --->
-    <svelte:fragment slot="panel">
-      {#if tabSet === 0}
-        <CodeBlock language="bash" code="curl https://anyabi.xyz/api/get-abi/<chainid>/<address>" />
-      {:else if tabSet === 1}
-        <CodeBlock
-          language="typescript"
-          code={"const response = await fetch(`https://anyabi.xyz/api/get-abi/${chainid}/${address}`, {method: 'GET'});"}
-        />
-      {:else if tabSet === 2}
-        <CodeBlock
-          language="go"
-          code={`req, err := http.NewRequest("GET", fmt.Sprintf("https://anyabi.xyz/api/get-abi/%v/%v", chainid, address), nil)`}
-        />
-      {:else if tabSet === 3}
-        <CodeBlock
-          language="python"
-          code={`response = requests.get(f"https://anyabi.xyz/api/get-abi/{chainid}/{address}")`}
-        />
-      {:else if tabSet === 4}
-        <CodeBlock
-          language="ruby"
-          code={`response = Net::HTTP.get_response(URI(f"https://anyabi.xyz/api/get-abi/{chainid}/{address}"))`}
-        />
-      {:else if tabSet === 5}
-        <CodeBlock
-          language="rust"
-          code={`let response = reqwest::get(&format!("https://anyabi.xyz/api/get-abi/{}/{}", chainid, address))?;`}
-        />
-      {/if}
-    </svelte:fragment>
-  </TabGroup>
-  <hr class="my-5" />
+  <Snippets />
   <h3 class="mb-3">Search for an ABI</h3>
   <Typeahead
     hideLabel
