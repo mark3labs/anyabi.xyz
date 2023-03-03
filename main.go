@@ -2,6 +2,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
@@ -100,6 +102,7 @@ func main() {
 	app := pocketbase.New()
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+		// GET ABI
 		e.Router.AddRoute(echo.Route{
 			Method: http.MethodGet,
 			Path:   "/api/get-abi/:chainId/:address",
@@ -118,6 +121,7 @@ func main() {
 			},
 		})
 
+		// GET ABI .json
 		e.Router.AddRoute(echo.Route{
 			Method: http.MethodGet,
 			Path:   "/api/get-abi/:chainId/:address/abi.json",
@@ -130,6 +134,69 @@ func main() {
 					return c.JSON(http.StatusNotFound, map[string]interface{}{"error": err.Error()})
 				}
 				return c.JSON(http.StatusOK, abi)
+			},
+			Middlewares: []echo.MiddlewareFunc{
+				apis.ActivityLogger(app),
+			},
+		})
+
+		// POST ABI decode calldata
+		e.Router.AddRoute(echo.Route{
+			Method: http.MethodPost,
+			Path:   "/api/get-abi/:chainId/:address/decode",
+			Handler: func(c echo.Context) error {
+
+				address := common.HexToAddress(c.PathParam("address")).String()
+
+				name, abi, err := getABI(app, c.PathParam("chainId"), address)
+				if err != nil {
+					return c.JSON(http.StatusNotFound, map[string]interface{}{"error": err.Error()})
+				}
+
+				var request struct {
+					CallData string `json:"calldata"`
+				}
+
+				c.Bind(&request)
+
+				// decode txInput method signature
+				decodedSig, err := hex.DecodeString(request.CallData[2:10])
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error decoding signature: %v\n", err)
+					return err
+				}
+				fmt.Println(decodedSig)
+
+				// decode txInput Payload
+				callDataArgs, err := hex.DecodeString(request.CallData[10:])
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error decoding data: %v\n", err)
+					return err
+				}
+
+				stringAbi, _ := json.Marshal(abi)
+
+				var metadata = &bind.MetaData{ABI: string(stringAbi)}
+				ABI, err := metadata.GetAbi()
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error parsing ABI: %v\n", err)
+					return err
+				}
+
+				method, err := ABI.MethodById(decodedSig)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error finding method: %v\n", err)
+					return err
+				}
+
+				data := make(map[string]interface{})
+				err = method.Inputs.UnpackIntoMap(data, callDataArgs)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error unpacking values: %v\n", err)
+					return err
+				}
+
+				return c.JSON(http.StatusOK, map[string]interface{}{"name": name, "abi": abi, "args": data})
 			},
 			Middlewares: []echo.MiddlewareFunc{
 				apis.ActivityLogger(app),
@@ -228,7 +295,6 @@ func getAbiFromEtherscan(chainId, address string) (string, any, error) {
 		return "", nil, err
 	}
 
-	fmt.Println(result.Result[0].ContractName, abiJson)
 	return result.Result[0].ContractName, abiJson, nil
 }
 
