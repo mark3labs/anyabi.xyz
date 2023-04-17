@@ -93,6 +93,7 @@ var etherscanConfig map[string]string = map[string]string{
 	"44787":    "https://api-alfajores.celoscan.io/api",
 	"288":      "https://api.bobascan.com/api",
 	"2888":     "https://api-testnet.bobascan.com/api",
+	"534353":   "https://blockscout.scroll.io/api",
 
 	// TODO: finsish adding chains
 }
