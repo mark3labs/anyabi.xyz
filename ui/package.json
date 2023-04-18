@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@iconify/svelte": "^3.1.0",
-    "@skeletonlabs/skeleton": "^0.132.5",
+    "@skeletonlabs/skeleton": "^1.2.0",
     "@sveltejs/adapter-auto": "^2.0.0",
     "@sveltejs/kit": "^1.5.0",
     "@tailwindcss/forms": "^0.5.3",
@@ -39,10 +39,10 @@
   },
   "type": "module",
   "dependencies": {
+    "@floating-ui/dom": "^1.2.6",
     "@sveltejs/adapter-static": "^2.0.1",
     "ethers": "^6.0.8",
     "highlight.js": "^11.7.0",
-    "svelte-loading-spinners": "^0.3.4",
-    "svelte-typeahead": "^4.4.1"
+    "svelte-loading-spinners": "^0.3.4"
   }
 }

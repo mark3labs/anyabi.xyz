@@ -3,10 +3,10 @@
   import Snippets from '$lib/components/Snippets.svelte'
   import hljs from 'highlight.js'
   import 'highlight.js/styles/github-dark.css'
-  import { CodeBlock, storeHighlightJs } from '@skeletonlabs/skeleton'
+  import { CodeBlock, storeHighlightJs, Autocomplete, popup } from '@skeletonlabs/skeleton'
+  import type { AutocompleteOption, PopupSettings } from '@skeletonlabs/skeleton'
   import { isAddress } from 'ethers'
   import { Pulse } from 'svelte-loading-spinners'
-  import Typeahead from 'svelte-typeahead'
   import { PUBLIC_API_URL } from '$env/static/public'
 
   storeHighlightJs.set(hljs)
@@ -14,12 +14,35 @@
   let abi: any
 
   let form = {
-    chainId: 1,
+    chainId: null,
     address: '',
+  }
+
+  let chainSearch = ''
+
+  const options: AutocompleteOption[] = chains.map((chain) => ({
+    label: chain.name,
+    value: chain.chainId,
+  }))
+
+  let popupSettings: PopupSettings = {
+    event: 'focus',
+    target: 'popupAutocomplete',
+    placement: 'top',
+  }
+
+  const onChainSelect = (event: any) => {
+    form.chainId = event.detail.value
+    chainSearch = event.detail.label
   }
 
   const fetchABI = async () => {
     abi = undefined
+
+    if (!form.chainId) {
+      throw new Error('No Chain Selected')
+    }
+
     if (!isAddress(form.address)) {
       throw new Error('Invalid Address')
     }
@@ -35,15 +58,17 @@
 <div class="container mx-auto my-20 p-2">
   <Snippets />
   <h3 class="mb-3">Search for an ABI</h3>
-  <Typeahead
-    hideLabel
-    showDropdownOnFocus
-    showAllResultsOnFocus
-    data={chains}
-    extract={(item) => item.name}
-    on:select={({ detail }) => (form.chainId = detail.original.chainId)}
+  <input
+    class="input autocomplete mb-2"
+    type="search"
+    name="chain"
+    bind:value={chainSearch}
     placeholder="Chain..."
+    use:popup={popupSettings}
   />
+  <div data-popup="popupAutocomplete" class="card w-full overflow-y-auto max-h-48 max-w-lg">
+    <Autocomplete bind:input={chainSearch} {options} on:selection={onChainSelect} />
+  </div>
   <div class="input-group input-group-divider grid-cols-[1fr_auto]">
     <input type="search" placeholder="Contract Address..." bind:value={form.address} />
     <button
@@ -75,29 +100,3 @@
     </div>
   {/if}
 </div>
-
-<style lang="postcss">
-  :global([data-svelte-typeahead]) {
-    @apply !rounded-full !bg-surface-500 !text-primary-500 !border-0 !shadow-none !ring-0 !outline-none !m-1;
-  }
-
-  :global([data-svelte-search] input) {
-    @apply !rounded-full !border-0 !ring !ring-surface-500 !bg-surface-700 focus:!ring-primary-500 focus:!outline-none;
-  }
-
-  :global([data-svelte-typeahead] ul) {
-    @apply !bg-surface-500 rounded !text-white;
-  }
-
-  :global([data-svelte-typeahead] mark) {
-    @apply !bg-surface-200;
-  }
-
-  :global([data-svelte-typeahead] li.selected) {
-    @apply !bg-primary-500;
-  }
-
-  :global([data-svelte-search]) {
-    @apply rounded-full mb-3 text-white;
-  }
-</style>
