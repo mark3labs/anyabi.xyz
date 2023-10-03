@@ -52,18 +52,15 @@ type SourcifyResponse struct {
 	} `json:"compiler"`
 	Language string `json:"language"`
 	Output   struct {
-		Abi    []interface{} `json:"abi"`
-		Devdoc struct {
-		} `json:"devdoc"`
-		Userdoc struct {
-		} `json:"userdoc"`
+		Abi     []interface{} `json:"abi"`
+		Devdoc  struct{}      `json:"devdoc"`
+		Userdoc struct{}      `json:"userdoc"`
 	} `json:"output"`
 	Settings struct {
 		CompilationTarget map[string]string `json:"compilationTarget"`
 	} `json:"settings"`
-	Sources struct {
-	} `json:"sources"`
-	Version int `json:"version"`
+	Sources struct{} `json:"sources"`
+	Version int      `json:"version"`
 }
 
 var etherscanConfig map[string]string = map[string]string{
@@ -95,6 +92,7 @@ var etherscanConfig map[string]string = map[string]string{
 	"2888":     "https://api-testnet.bobascan.com/api",
 	"534353":   "https://blockscout.scroll.io/api",
 	"8453":     "https://api.basescan.org/api",
+	"84531":    "https://api-goerli.basescan.org/api",
 
 	// TODO: finsish adding chains
 }
@@ -109,7 +107,6 @@ func main() {
 			Method: http.MethodGet,
 			Path:   "/api/get-abi/:chainId/:address",
 			Handler: func(c echo.Context) error {
-
 				address := common.HexToAddress(c.PathParam("address")).String()
 
 				name, abi, err := getABI(app, c.PathParam("chainId"), address)
@@ -128,7 +125,6 @@ func main() {
 			Method: http.MethodGet,
 			Path:   "/api/get-abi/:chainId/:address/abi.json",
 			Handler: func(c echo.Context) error {
-
 				address := common.HexToAddress(c.PathParam("address")).String()
 
 				_, abi, err := getABI(app, c.PathParam("chainId"), address)
@@ -147,7 +143,6 @@ func main() {
 			Method: http.MethodPost,
 			Path:   "/api/get-abi/:chainId/:address/decode",
 			Handler: func(c echo.Context) error {
-
 				address := common.HexToAddress(c.PathParam("address")).String()
 
 				name, abi, err := getABI(app, c.PathParam("chainId"), address)
@@ -178,7 +173,7 @@ func main() {
 
 				stringAbi, _ := json.Marshal(abi)
 
-				var metadata = &bind.MetaData{ABI: string(stringAbi)}
+				metadata := &bind.MetaData{ABI: string(stringAbi)}
 				ABI, err := metadata.GetAbi()
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Error parsing ABI: %v\n", err)
@@ -220,7 +215,6 @@ func main() {
 }
 
 func getABI(app *pocketbase.PocketBase, chainId, address string) (string, any, error) {
-
 	// Try to fetch cached ABI first
 	name, abi, _ := getCachedABI(app, chainId, address)
 	if abi != nil {
@@ -338,7 +332,6 @@ func getAbiFromSourcify(matchType, chainId, address string) (string, any, error)
 }
 
 func saveABI(app *pocketbase.PocketBase, chainid, address, name string, abi any) error {
-
 	collection, err := app.Dao().FindCollectionByNameOrId("abis")
 	if err != nil {
 		return err
