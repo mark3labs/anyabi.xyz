@@ -93,6 +93,7 @@ var etherscanConfig map[string]string = map[string]string{
 	"534353":   "https://blockscout.scroll.io/api",
 	"8453":     "https://api.basescan.org/api",
 	"84531":    "https://api-goerli.basescan.org/api",
+	"59144":    "https://api.lineascan.build/api",
 
 	// TODO: finsish adding chains
 }
