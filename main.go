@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -220,7 +221,7 @@ func getABI(app *pocketbase.PocketBase, chainId, address string) (string, any, e
 	// Try to fetch cached ABI first
 	name, abi, _ := getCachedABI(app, chainId, address)
 	if abi != nil {
-		return name, abi, nil
+		return cleanName(name), abi, nil
 	}
 
 	name, abi, _ = getAbiFromEtherscan(chainId, address)
@@ -229,7 +230,7 @@ func getABI(app *pocketbase.PocketBase, chainId, address string) (string, any, e
 		if err != nil {
 			log.Println(err)
 		}
-		return name, abi, nil
+		return cleanName(name), abi, nil
 	}
 
 	// Try to fectch ABI from Sourcify full match
@@ -239,7 +240,7 @@ func getABI(app *pocketbase.PocketBase, chainId, address string) (string, any, e
 		if err != nil {
 			log.Println(err)
 		}
-		return name, abi, nil
+		return cleanName(name), abi, nil
 	}
 
 	// Try to fectch ABI from Sourcify partial match
@@ -249,7 +250,7 @@ func getABI(app *pocketbase.PocketBase, chainId, address string) (string, any, e
 		if err != nil {
 			log.Println(err)
 		}
-		return name, abi, nil
+		return cleanName(name), abi, nil
 	}
 
 	return "", nil, errors.New("ABI not found")
@@ -353,4 +354,12 @@ func saveABI(app *pocketbase.PocketBase, chainid, address, name string, abi any)
 	}
 
 	return nil
+}
+
+func cleanName(name string) string {
+	if strings.Contains(name, ":") {
+		return strings.Split(name, ":")[1]
+	} else {
+		return name
+	}
 }
