@@ -79,6 +79,7 @@ var etherscanConfig map[string]string = map[string]string{
 	"420":      "https://api-goerli-optimistic.etherscan.io/api",
 	"42161":    "https://api.arbiscan.io/api",
 	"421613":   "https://api-goerli.arbiscan.io/api",
+	"421614":   "https://api-sepolia.arbiscan.io/api",
 	"42170":    "https://api-nova.arbiscan.io/api",
 	"250":      "https://api.ftmscan.com/api",
 	"4002":     "https://api-testnet.ftmscan.com/api",
