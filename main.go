@@ -100,6 +100,7 @@ var etherscanConfig map[string]string = map[string]string{
 	"324":       "https://block-explorer-api.mainnet.zksync.io/api",
 	"1101":      "https://api-zkevm.polygonscan.com/api",
 	"168587773": "https://api.routescan.io/v2/network/testnet/evm/168587773/etherscan/api",
+	"1088":      "https://api.routescan.io/v2/network/mainnet/evm/1088/etherscan/api",
 
 	// TODO: finsish adding chains
 }
