@@ -95,7 +95,7 @@ var etherscanConfig map[string]string = map[string]string{
 	"534353":    "https://blockscout.scroll.io/api",
 	"8453":      "https://api.basescan.org/api",
 	"84531":     "https://api-goerli.basescan.org/api",
-	"84532":     "https://base-sepolia.blockscout.com/api",
+	"84532":     "https://api-sepolia.basescan.org/api",
 	"59144":     "https://api.lineascan.build/api",
 	"324":       "https://block-explorer-api.mainnet.zksync.io/api",
 	"1101":      "https://api-zkevm.polygonscan.com/api",
