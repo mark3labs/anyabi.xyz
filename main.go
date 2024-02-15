@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -53,9 +53,9 @@ type SourcifyResponse struct {
 	} `json:"compiler"`
 	Language string `json:"language"`
 	Output   struct {
-		Abi     []interface{} `json:"abi"`
-		Devdoc  struct{}      `json:"devdoc"`
-		Userdoc struct{}      `json:"userdoc"`
+		Abi     []map[string]interface{} `json:"abi"`
+		Devdoc  struct{}                 `json:"devdoc"`
+		Userdoc struct{}                 `json:"userdoc"`
 	} `json:"output"`
 	Settings struct {
 		CompilationTarget map[string]string `json:"compilationTarget"`
@@ -117,10 +117,13 @@ func main() {
 			Handler: func(c echo.Context) error {
 				address := common.HexToAddress(c.PathParam("address")).String()
 
+				log.Println("Fetching ABI...")
 				name, abi, err := getABI(app, c.PathParam("chainId"), address)
 				if err != nil {
+					log.Println(err)
 					return c.JSON(http.StatusNotFound, map[string]interface{}{"error": err.Error()})
 				}
+				abi = normalizeAbi(abi)
 				return c.JSON(http.StatusOK, map[string]interface{}{"name": name, "abi": abi})
 			},
 			Middlewares: []echo.MiddlewareFunc{
@@ -139,6 +142,7 @@ func main() {
 				if err != nil {
 					return c.JSON(http.StatusNotFound, map[string]interface{}{"error": err.Error()})
 				}
+				abi = normalizeAbi(abi)
 				return c.JSON(http.StatusOK, abi)
 			},
 			Middlewares: []echo.MiddlewareFunc{
@@ -157,6 +161,7 @@ func main() {
 				if err != nil {
 					return c.JSON(http.StatusNotFound, map[string]interface{}{"error": err.Error()})
 				}
+				abi = normalizeAbi(abi)
 
 				var request struct {
 					CallData string `json:"calldata"`
@@ -170,7 +175,6 @@ func main() {
 					fmt.Fprintf(os.Stderr, "Error decoding signature: %v\n", err)
 					return err
 				}
-				fmt.Println(decodedSig)
 
 				// decode txInput Payload
 				callDataArgs, err := hex.DecodeString(request.CallData[10:])
@@ -222,54 +226,72 @@ func main() {
 	}
 }
 
-func getABI(app *pocketbase.PocketBase, chainId, address string) (string, any, error) {
+func getABI(app *pocketbase.PocketBase, chainId, address string) (string, []map[string]interface{}, error) {
 	// Try to fetch cached ABI first
-	name, abi, _ := getCachedABI(app, chainId, address)
+	log.Println("Fetching cached ABI...")
+	name, abi, err := getCachedABI(app, chainId, address)
+	if err != nil {
+		log.Println(err)
+		return "", nil, err
+	}
 	if abi != nil {
+		log.Println("Cached ABI found")
 		return cleanName(name), abi, nil
 	}
 
+	log.Println("Fetching ABI from Etherscan...")
 	name, abi, _ = getAbiFromEtherscan(chainId, address)
 	if abi != nil {
 		err := saveABI(app, chainId, address, name, abi)
 		if err != nil {
 			log.Println(err)
 		}
+		log.Println("ABI found on Etherscan")
 		return cleanName(name), abi, nil
 	}
 
 	// Try to fectch ABI from Sourcify full match
+	log.Println("Fetching ABI from Sourcify (full-match)...")
 	name, abi, _ = getAbiFromSourcify("full", chainId, address)
 	if abi != nil {
 		err := saveABI(app, chainId, address, name, abi)
 		if err != nil {
 			log.Println(err)
 		}
+		log.Println("ABI found on Sourcify")
 		return cleanName(name), abi, nil
 	}
 
 	// Try to fectch ABI from Sourcify partial match
+	log.Println("Fetching ABI from Sourcify (partial-match)...")
 	name, abi, _ = getAbiFromSourcify("partial", chainId, address)
 	if abi != nil {
 		err := saveABI(app, chainId, address, name, abi)
 		if err != nil {
 			log.Println(err)
 		}
+		log.Println("ABI found on Sourcify")
 		return cleanName(name), abi, nil
 	}
 
 	return "", nil, errors.New("ABI not found")
 }
 
-func getCachedABI(app *pocketbase.PocketBase, chainId, address string) (string, any, error) {
+func getCachedABI(app *pocketbase.PocketBase, chainId, address string) (string, []map[string]interface{}, error) {
 	records, err := app.Dao().FindRecordsByExpr("abis", dbx.NewExp("chainid = {:chainid} and address = {:address}", dbx.Params{"chainid": chainId, "address": address}))
 	if err != nil || len(records) == 0 {
 		return "", nil, err
 	}
-	return records[0].GetString("name"), records[0].Get("abi"), nil
+	abiString := records[0].GetString("abi")
+	var abiJson []map[string]interface{}
+	err = json.Unmarshal([]byte(abiString), &abiJson)
+	if err != nil {
+		return "", nil, err
+	}
+	return records[0].GetString("name"), abiJson, nil
 }
 
-func getAbiFromEtherscan(chainId, address string) (string, any, error) {
+func getAbiFromEtherscan(chainId, address string) (string, []map[string]interface{}, error) {
 	apiUrl := fmt.Sprintf("%s?module=contract&action=getsourcecode&address=%s&apikey=%s", etherscanConfig[chainId], address, os.Getenv("CHAIN_"+chainId+"_ETHERSCAN_KEY"))
 
 	// Send GET request to Etherscan API
@@ -280,7 +302,7 @@ func getAbiFromEtherscan(chainId, address string) (string, any, error) {
 	defer response.Body.Close()
 
 	// Read response body
-	responseBody, err := ioutil.ReadAll(response.Body)
+	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", nil, err
 	}
@@ -293,7 +315,7 @@ func getAbiFromEtherscan(chainId, address string) (string, any, error) {
 	}
 
 	// Extract ABI from interface{} type
-	var abiJson interface{}
+	var abiJson []map[string]interface{}
 	err = json.Unmarshal([]byte(result.Result[0].ABI), &abiJson)
 	if err != nil {
 		return "", nil, err
@@ -302,7 +324,7 @@ func getAbiFromEtherscan(chainId, address string) (string, any, error) {
 	return result.Result[0].ContractName, abiJson, nil
 }
 
-func getAbiFromSourcify(matchType, chainId, address string) (string, any, error) {
+func getAbiFromSourcify(matchType, chainId, address string) (string, []map[string]interface{}, error) {
 	if matchType != "full" && matchType != "partial" {
 		return "", nil, fmt.Errorf("invalid type")
 	}
@@ -318,7 +340,7 @@ func getAbiFromSourcify(matchType, chainId, address string) (string, any, error)
 	defer response.Body.Close()
 
 	// Read response body
-	responseBody, err := ioutil.ReadAll(response.Body)
+	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", nil, err
 	}
@@ -339,7 +361,7 @@ func getAbiFromSourcify(matchType, chainId, address string) (string, any, error)
 	return contractName, result.Output.Abi, nil
 }
 
-func saveABI(app *pocketbase.PocketBase, chainid, address, name string, abi any) error {
+func saveABI(app *pocketbase.PocketBase, chainid, address, name string, abi []map[string]interface{}) error {
 	collection, err := app.Dao().FindCollectionByNameOrId("abis")
 	if err != nil {
 		return err
@@ -367,4 +389,19 @@ func cleanName(name string) string {
 	} else {
 		return name
 	}
+}
+
+func normalizeAbi(abi []map[string]interface{}) []map[string]interface{} {
+	newAbi := []map[string]interface{}{}
+	// loop through each item in the array and if "type" == "function" make sure any "outputs" parameter exists. If not set "outputs" to []
+	for _, item := range abi {
+		if item["type"] == "function" {
+			if _, ok := item["outputs"]; !ok {
+				item["outputs"] = []map[string]interface{}{}
+			}
+		}
+		newAbi = append(newAbi, item)
+	}
+
+	return newAbi
 }
