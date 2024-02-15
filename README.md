@@ -163,7 +163,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@what_the_func](https://twitter.com/what_the_func) - ezynda@mark3labs.com
+Ed Zynda - [@what_the_func](https://twitter.com/what_the_func) - ezynda@mark3labs.com
 
 Project Link: [https://github.com/mark3labs/anyabi.xyz](https://github.com/mark3labs/anyabi.xyz)
 
