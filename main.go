@@ -1,6 +1,9 @@
 // main.go
 package main
 
+//go:generate go run ./codegen/gen_apis.go
+//go:generate go fmt ./apis_generated.go
+
 import (
 	"encoding/hex"
 	"encoding/json"
