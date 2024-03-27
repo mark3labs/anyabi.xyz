@@ -88,7 +88,7 @@ var etherscanConfig map[string]string = map[string]string{
 	"13381":      "https://phoenixplorer.com/api",
 	"161221135":  "https://plume-testnet.explorer.caldera.xyz/api",
 	"137":        "https://api.polygonscan.com/api",
-	"80001":      "https://mumbai.polygonscan.com/api",
+	"80001":      "https://api-testnet.polygonscan.com/api",
 	"1101":       "https://api-zkevm.polygonscan.com/api",
 	"1442":       "https://testnet-zkevm.polygonscan.com/api",
 	"369":        "https://api.scan.pulsechain.com/api",
