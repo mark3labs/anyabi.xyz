@@ -60,6 +60,8 @@ var etherscanConfig map[string]string = map[string]string{
 	"255":        "https://blockscout.kroma.network/api",
 	"2358":       "https://blockscout.sepolia.kroma.network/api",
 	"59144":      "https://api.lineascan.build/api",
+	"59140":      "https://api-goerli.lineascan.build/api",
+	"59141":      "https://api-sepolia.lineascan.build/api",
 	"59140":      "https://goerli.lineascan.build/api",
 	"4202":       "https://sepolia-blockscout.lisk.com/api",
 	"42":         "https://api.explorer.execution.mainnet.lukso.network/api",
