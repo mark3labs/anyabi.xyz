@@ -212,6 +212,17 @@ func getABI(app *pocketbase.PocketBase, chainId, address string) (string, []map[
 		return cleanName(name), abi, nil
 	}
 
+	log.Println("Fetching ABI from Routescan...")
+	name, abi, _ = getAbiFromRoutescan(chainId, address)
+	if abi != nil {
+		err := saveABI(app, chainId, address, name, abi)
+		if err != nil {
+			log.Println(err)
+		}
+		log.Println("ABI found on Routescan")
+		return cleanName(name), abi, nil
+	}
+
 	// Try to fectch ABI from Sourcify full match
 	log.Println("Fetching ABI from Sourcify (full-match)...")
 	name, abi, _ = getAbiFromSourcify("full", chainId, address)
@@ -255,6 +266,40 @@ func getCachedABI(app *pocketbase.PocketBase, chainId, address string) (string, 
 
 func getAbiFromEtherscan(chainId, address string) (string, []map[string]interface{}, error) {
 	apiUrl := fmt.Sprintf("%s?module=contract&action=getsourcecode&address=%s&apikey=%s", etherscanConfig[chainId], address, os.Getenv("CHAIN_"+chainId+"_ETHERSCAN_KEY"))
+
+	// Send GET request to Etherscan API
+	response, err := http.Get(apiUrl)
+	if err != nil {
+		return "", nil, err
+	}
+	defer response.Body.Close()
+
+	// Read response body
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Unmarshal response body JSON into interface{} type
+	var result EtherscanResponse
+	err = json.Unmarshal(responseBody, &result)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Extract ABI from interface{} type
+	var abiJson []map[string]interface{}
+	err = json.Unmarshal([]byte(result.Result[0].ABI), &abiJson)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return result.Result[0].ContractName, abiJson, nil
+}
+
+func getAbiFromRoutescan(chainId, address string) (string, []map[string]interface{}, error) {
+	routeScanUrl := fmt.Sprintf("https://api.routescan.io/v2/network/mainnet/evm/%s/etherscan/api", chainId)
+	apiUrl := fmt.Sprintf("%s?module=contract&action=getsourcecode&address=%s&apikey=%s", routeScanUrl, address, os.Getenv("CHAIN_"+chainId+"_ETHERSCAN_KEY"))
 
 	// Send GET request to Etherscan API
 	response, err := http.Get(apiUrl)
