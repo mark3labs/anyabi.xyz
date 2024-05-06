@@ -321,6 +321,10 @@ func getAbiFromRoutescan(chainId, address string) (string, []map[string]interfac
 		return "", nil, err
 	}
 
+	if len(result.Result) < 1 {
+		return "", nil, errors.New("not found")
+	}
+
 	// Extract ABI from interface{} type
 	var abiJson []map[string]interface{}
 	err = json.Unmarshal([]byte(result.Result[0].ABI), &abiJson)
@@ -336,7 +340,7 @@ func getAbiFromSourcify(matchType, chainId, address string) (string, []map[strin
 		return "", nil, fmt.Errorf("invalid type")
 	}
 
-	// Replace <API_KEY> with your Etherscan API key
+	// Replace <API_KEY> w0xF2ee649caB7a0edEdED7a27821B0aCDF77778aeDith your Etherscan API key
 	apiUrl := fmt.Sprintf("https://repo.sourcify.dev/contracts/%s_match/%s/%s/metadata.json", matchType, chainId, address)
 
 	// Send GET request to Etherscan API
