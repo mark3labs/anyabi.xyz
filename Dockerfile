@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Stage 1: Build the static files
-FROM node:16.17.0-alpine3.15 as ui-builder
+FROM node:22-alpine3.18 as ui-builder
 WORKDIR /ui
 RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY /ui/package.json /ui/pnpm-lock.yaml ./
