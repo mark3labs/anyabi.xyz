@@ -127,4 +127,5 @@ var etherscanConfig map[string]string = map[string]string{
 	"7777777":    "https://explorer.zora.energy/api",
 	"999999999":  "https://sepolia.explorer.zora.energy/api",
 	"999":        "https://testnet.explorer.zora.energy/api",
+	"1329":       "https://seitrace.com/pacific-1/api",
 }
