@@ -59,6 +59,7 @@ var etherscanConfig map[string]string = map[string]string{
 	"100":              "https://api.gnosisscan.io/api",
 	"10200":            "https://blockscout.chiadochain.net/api",
 	"5":                "https://api-goerli.etherscan.io/api",
+	"1625":             "https://explorer.gravity.xyz/api",
 	"5112":             "https://explorer.ham.fun/api/v2",
 	"11235":            "https://explorer.haqq.network/api",
 	"54211":            "https://explorer.testedge2.haqq.network/api",
