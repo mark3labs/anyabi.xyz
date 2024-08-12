@@ -147,8 +147,6 @@ var etherscanConfig map[string]string = map[string]string{
 	"42766":            "https://scan.zkfair.io/api",
 	"324":              "https://api-era.zksync.network/api",
 	"300":              "https://api-sepolia-era.zksync.network/api",
-	"324":              "https://api-era.zksync.network/api",
-	"300":              "https://api-sepolia-era.zksync.network/api",
 	"7777777":          "https://explorer.zora.energy/api",
 	"999999999":        "https://sepolia.explorer.zora.energy/api",
 	"999":              "https://testnet.explorer.zora.energy/api",
