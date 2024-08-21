@@ -8,6 +8,7 @@ require (
 	github.com/labstack/echo/v5 v5.0.0-20220201181537-ed2888cfa198
 	github.com/pocketbase/dbx v1.10.0
 	github.com/pocketbase/pocketbase v0.13.0
+	golang.org/x/time v0.3.0
 )
 
 require (
@@ -80,7 +81,6 @@ require (
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/term v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
-	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/api v0.110.0 // indirect

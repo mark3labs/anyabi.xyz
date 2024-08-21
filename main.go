@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 	_ "github.com/mark3labs/anyabi.xyz/migrations"
 	"github.com/mark3labs/anyabi.xyz/ui"
 	"github.com/pocketbase/dbx"
@@ -28,6 +29,7 @@ import (
 	"github.com/pocketbase/pocketbase/forms"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
+	"golang.org/x/time/rate"
 )
 
 type EtherscanResponse struct {
@@ -83,14 +85,22 @@ func main() {
 				name, abi, err := getABI(app, c.PathParam("chainId"), address)
 				if err != nil {
 					log.Println(err)
-					return c.JSON(http.StatusNotFound, map[string]interface{}{"error": err.Error()})
+					return c.JSON(
+						http.StatusNotFound,
+						map[string]interface{}{"error": err.Error()},
+					)
 				}
 				abi = normalizeAbi(abi)
-				return c.JSON(http.StatusOK, map[string]interface{}{"name": name, "abi": abi})
+				return c.JSON(
+					http.StatusOK,
+					map[string]interface{}{"name": name, "abi": abi},
+				)
 			},
 			Middlewares: []echo.MiddlewareFunc{
 				apis.ActivityLogger(app),
-			},
+				middleware.RateLimiter(
+					middleware.NewRateLimiterMemoryStore(rate.Limit(20)),
+				)},
 		})
 
 		// GET ABI .json
@@ -102,14 +112,19 @@ func main() {
 
 				_, abi, err := getABI(app, c.PathParam("chainId"), address)
 				if err != nil {
-					return c.JSON(http.StatusNotFound, map[string]interface{}{"error": err.Error()})
+					return c.JSON(
+						http.StatusNotFound,
+						map[string]interface{}{"error": err.Error()},
+					)
 				}
 				abi = normalizeAbi(abi)
 				return c.JSON(http.StatusOK, abi)
 			},
 			Middlewares: []echo.MiddlewareFunc{
 				apis.ActivityLogger(app),
-			},
+				middleware.RateLimiter(
+					middleware.NewRateLimiterMemoryStore(rate.Limit(20)),
+				)},
 		})
 
 		// POST ABI decode calldata
@@ -121,7 +136,10 @@ func main() {
 
 				name, abi, err := getABI(app, c.PathParam("chainId"), address)
 				if err != nil {
-					return c.JSON(http.StatusNotFound, map[string]interface{}{"error": err.Error()})
+					return c.JSON(
+						http.StatusNotFound,
+						map[string]interface{}{"error": err.Error()},
+					)
 				}
 				abi = normalizeAbi(abi)
 
@@ -134,7 +152,11 @@ func main() {
 				// decode txInput method signature
 				decodedSig, err := hex.DecodeString(request.CallData[2:10])
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "Error decoding signature: %v\n", err)
+					fmt.Fprintf(
+						os.Stderr,
+						"Error decoding signature: %v\n",
+						err,
+					)
 					return err
 				}
 
@@ -167,11 +189,20 @@ func main() {
 					return err
 				}
 
-				return c.JSON(http.StatusOK, map[string]interface{}{"name": name, "abi": abi, "args": data})
+				return c.JSON(
+					http.StatusOK,
+					map[string]interface{}{
+						"name": name,
+						"abi":  abi,
+						"args": data,
+					},
+				)
 			},
 			Middlewares: []echo.MiddlewareFunc{
 				apis.ActivityLogger(app),
-			},
+				middleware.RateLimiter(
+					middleware.NewRateLimiterMemoryStore(rate.Limit(20)),
+				)},
 		})
 
 		e.Router.GET("/*", apis.StaticDirectoryHandler(ui.BuildDirFS, true))
@@ -188,7 +219,10 @@ func main() {
 	}
 }
 
-func getABI(app *pocketbase.PocketBase, chainId, address string) (string, []map[string]interface{}, error) {
+func getABI(
+	app *pocketbase.PocketBase,
+	chainId, address string,
+) (string, []map[string]interface{}, error) {
 	// Try to fetch cached ABI first
 	log.Println("Fetching cached ABI...")
 	name, abi, err := getCachedABI(app, chainId, address)
@@ -250,8 +284,12 @@ func getABI(app *pocketbase.PocketBase, chainId, address string) (string, []map[
 	return "", nil, errors.New("ABI not found")
 }
 
-func getCachedABI(app *pocketbase.PocketBase, chainId, address string) (string, []map[string]interface{}, error) {
-	records, err := app.Dao().FindRecordsByExpr("abis", dbx.NewExp("chainid = {:chainid} and address = {:address}", dbx.Params{"chainid": chainId, "address": address}))
+func getCachedABI(
+	app *pocketbase.PocketBase,
+	chainId, address string,
+) (string, []map[string]interface{}, error) {
+	records, err := app.Dao().
+		FindRecordsByExpr("abis", dbx.NewExp("chainid = {:chainid} and address = {:address}", dbx.Params{"chainid": chainId, "address": address}))
 	if err != nil || len(records) == 0 {
 		return "", nil, err
 	}
@@ -264,8 +302,15 @@ func getCachedABI(app *pocketbase.PocketBase, chainId, address string) (string, 
 	return records[0].GetString("name"), abiJson, nil
 }
 
-func getAbiFromEtherscan(chainId, address string) (string, []map[string]interface{}, error) {
-	apiUrl := fmt.Sprintf("%s?module=contract&action=getsourcecode&address=%s&apikey=%s", etherscanConfig[chainId], address, os.Getenv("CHAIN_"+chainId+"_ETHERSCAN_KEY"))
+func getAbiFromEtherscan(
+	chainId, address string,
+) (string, []map[string]interface{}, error) {
+	apiUrl := fmt.Sprintf(
+		"%s?module=contract&action=getsourcecode&address=%s&apikey=%s",
+		etherscanConfig[chainId],
+		address,
+		os.Getenv("CHAIN_"+chainId+"_ETHERSCAN_KEY"),
+	)
 
 	// Send GET request to Etherscan API
 	response, err := http.Get(apiUrl)
@@ -297,9 +342,19 @@ func getAbiFromEtherscan(chainId, address string) (string, []map[string]interfac
 	return result.Result[0].ContractName, abiJson, nil
 }
 
-func getAbiFromRoutescan(chainId, address string) (string, []map[string]interface{}, error) {
-	routeScanUrl := fmt.Sprintf("https://api.routescan.io/v2/network/mainnet/evm/%s/etherscan/api", chainId)
-	apiUrl := fmt.Sprintf("%s?module=contract&action=getsourcecode&address=%s&apikey=%s", routeScanUrl, address, os.Getenv("CHAIN_"+chainId+"_ETHERSCAN_KEY"))
+func getAbiFromRoutescan(
+	chainId, address string,
+) (string, []map[string]interface{}, error) {
+	routeScanUrl := fmt.Sprintf(
+		"https://api.routescan.io/v2/network/mainnet/evm/%s/etherscan/api",
+		chainId,
+	)
+	apiUrl := fmt.Sprintf(
+		"%s?module=contract&action=getsourcecode&address=%s&apikey=%s",
+		routeScanUrl,
+		address,
+		os.Getenv("CHAIN_"+chainId+"_ETHERSCAN_KEY"),
+	)
 
 	// Send GET request to Etherscan API
 	response, err := http.Get(apiUrl)
@@ -335,13 +390,20 @@ func getAbiFromRoutescan(chainId, address string) (string, []map[string]interfac
 	return result.Result[0].ContractName, abiJson, nil
 }
 
-func getAbiFromSourcify(matchType, chainId, address string) (string, []map[string]interface{}, error) {
+func getAbiFromSourcify(
+	matchType, chainId, address string,
+) (string, []map[string]interface{}, error) {
 	if matchType != "full" && matchType != "partial" {
 		return "", nil, fmt.Errorf("invalid type")
 	}
 
 	// Replace <API_KEY> w0xF2ee649caB7a0edEdED7a27821B0aCDF77778aeDith your Etherscan API key
-	apiUrl := fmt.Sprintf("https://repo.sourcify.dev/contracts/%s_match/%s/%s/metadata.json", matchType, chainId, address)
+	apiUrl := fmt.Sprintf(
+		"https://repo.sourcify.dev/contracts/%s_match/%s/%s/metadata.json",
+		matchType,
+		chainId,
+		address,
+	)
 
 	// Send GET request to Etherscan API
 	response, err := http.Get(apiUrl)
@@ -372,7 +434,11 @@ func getAbiFromSourcify(matchType, chainId, address string) (string, []map[strin
 	return contractName, result.Output.Abi, nil
 }
 
-func saveABI(app *pocketbase.PocketBase, chainid, address, name string, abi []map[string]interface{}) error {
+func saveABI(
+	app *pocketbase.PocketBase,
+	chainid, address, name string,
+	abi []map[string]interface{},
+) error {
 	collection, err := app.Dao().FindCollectionByNameOrId("abis")
 	if err != nil {
 		return err
