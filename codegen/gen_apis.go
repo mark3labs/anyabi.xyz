@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"net/http"
 	"os"
 	"text/template"
 
@@ -50,4 +51,48 @@ var etherscanConfig map[string]string = map[string]string{
 	}
 
 	f.Close()
+
+	// Download and filter chains_mini.json
+	miniChainsURL := "https://chainid.network/chains_mini.json"
+	resp, err := http.Get(miniChainsURL)
+	if err != nil {
+		log.Fatal("Error downloading chains_mini.json:", err)
+	}
+	defer resp.Body.Close()
+
+	var miniChains []map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&miniChains); err != nil {
+		log.Fatal("Error decoding chains_mini.json:", err)
+	}
+
+	// Create a set of chain IDs from the new chains
+	chainIDs := make(map[int]bool)
+	for _, chain := range chains {
+		chainIDs[chain.ID] = true
+	}
+
+	// Filter miniChains based on the new chain IDs
+	var filteredChains []map[string]interface{}
+	for _, chain := range miniChains {
+		if chainID, ok := chain["chainId"].(float64); ok {
+			if chainIDs[int(chainID)] {
+				filteredChains = append(filteredChains, chain)
+			}
+		}
+	}
+
+	// Save filtered chains to ui/src/lib/chains.json
+	uiChainsFile, err := os.Create("./ui/src/lib/chains.json")
+	if err != nil {
+		log.Fatal("Error creating ui/src/lib/chains.json:", err)
+	}
+	defer uiChainsFile.Close()
+
+	encoder := json.NewEncoder(uiChainsFile)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(filteredChains); err != nil {
+		log.Fatal("Error encoding filtered chains:", err)
+	}
+
+	log.Println("Successfully filtered and saved chains to ui/src/lib/chains.json")
 }
