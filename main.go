@@ -51,6 +51,26 @@ type EtherscanResponse struct {
 	} `json:"result"`
 }
 
+type EtherscanResponseNonStandard struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Result  struct {
+		SourceCode           string `json:"SourceCode"`
+		ABI                  string `json:"ABI"`
+		ContractName         string `json:"ContractName"`
+		CompilerVersion      string `json:"CompilerVersion"`
+		OptimizationUsed     string `json:"OptimizationUsed"`
+		Runs                 string `json:"Runs"`
+		ConstructorArguments string `json:"ConstructorArguments"`
+		EVMVersion           string `json:"EVMVersion"`
+		Library              string `json:"Library"`
+		LicenseType          string `json:"LicenseType"`
+		Proxy                string `json:"Proxy"`
+		Implementation       string `json:"Implementation"`
+		SwarmSource          string `json:"SwarmSource"`
+	} `json:"result"`
+}
+
 type SourcifyResponse struct {
 	Compiler struct {
 		Version string `json:"version"`
@@ -274,6 +294,17 @@ func getABI(
 		return cleanName(name), abi, nil
 	}
 
+	log.Println("Fetching ABI from Etherscan...")
+	name, abi, _ = getAbiFromEtherscanNonStandard(chainId, address)
+	if abi != nil {
+		err := saveABI(app, chainId, address, name, abi)
+		if err != nil {
+			log.Println(err)
+		}
+		log.Println("ABI found on Etherscan")
+		return cleanName(name), abi, nil
+	}
+
 	log.Println("Fetching ABI from Routescan...")
 	name, abi, _ = getAbiFromRoutescan(chainId, address)
 	if abi != nil {
@@ -339,6 +370,7 @@ func getAbiFromEtherscan(
 		address,
 		os.Getenv("CHAIN_"+chainId+"_ETHERSCAN_KEY"),
 	)
+	log.Println(apiUrl)
 
 	// Send GET request to Etherscan API
 	response, err := http.Get(apiUrl)
@@ -368,6 +400,46 @@ func getAbiFromEtherscan(
 	}
 
 	return result.Result[0].ContractName, abiJson, nil
+}
+
+func getAbiFromEtherscanNonStandard(
+	chainId, address string,
+) (string, []map[string]interface{}, error) {
+	apiUrl := fmt.Sprintf(
+		"%s?module=contract&action=getsourcecode&address=%s",
+		etherscanConfig[chainId],
+		address,
+	)
+	log.Println(apiUrl)
+
+	// Send GET request to Etherscan API
+	response, err := http.Get(apiUrl)
+	if err != nil {
+		return "", nil, err
+	}
+	defer response.Body.Close()
+
+	// Read response body
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Unmarshal response body JSON into interface{} type
+	var result EtherscanResponseNonStandard
+	err = json.Unmarshal(responseBody, &result)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Extract ABI from interface{} type
+	var abiJson []map[string]interface{}
+	err = json.Unmarshal([]byte(result.Result.ABI), &abiJson)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return result.Result.ContractName, abiJson, nil
 }
 
 func getAbiFromRoutescan(
