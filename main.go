@@ -9,12 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"log"
-	"net/http"
-	"os"
-	"strings"
-
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
@@ -30,6 +24,11 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 	"golang.org/x/time/rate"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"strings"
 )
 
 type EtherscanResponse struct {
@@ -69,16 +68,51 @@ type SourcifyResponse struct {
 	Version int      `json:"version"`
 }
 
+var (
+	bannedIPs = map[string]bool{
+		"104.154.76.147": true,
+		"34.122.246.162": true,
+		"34.45.228.219":  true,
+	}
+)
+
 func main() {
 	godotenv.Load()
 	app := pocketbase.New()
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+
+		rateLimiterConfig := middleware.RateLimiterConfig{
+			Skipper: middleware.DefaultSkipper,
+			Store:   middleware.NewRateLimiterMemoryStore(rate.Limit(30)),
+			IdentifierExtractor: func(ctx echo.Context) (string, error) {
+				id := ctx.Request().Header.Get("Fly-Client-IP")
+				return id, nil
+			},
+			ErrorHandler: func(context echo.Context, err error) error {
+				return context.JSON(http.StatusForbidden, nil)
+			},
+			DenyHandler: func(context echo.Context, identifier string, err error) error {
+				return context.JSON(http.StatusTooManyRequests, nil)
+			},
+		}
+		e.Router.Use(middleware.RateLimiterWithConfig(rateLimiterConfig))
+
+		e.Router.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				if _, ok := bannedIPs[c.Request().Header.Get("Fly-Client-IP")]; ok {
+					return echo.NewHTTPError(http.StatusForbidden)
+				}
+				return next(c)
+			}
+		})
 		// GET ABI
 		e.Router.AddRoute(echo.Route{
 			Method: http.MethodGet,
 			Path:   "/api/get-abi/:chainId/:address",
 			Handler: func(c echo.Context) error {
+				userIp := c.Request().Header.Get("Fly-Client-IP")
+				log.Println("User IP: ", userIp)
 				address := common.HexToAddress(c.PathParam("address")).String()
 
 				log.Println("Fetching ABI...")
@@ -98,9 +132,7 @@ func main() {
 			},
 			Middlewares: []echo.MiddlewareFunc{
 				apis.ActivityLogger(app),
-				middleware.RateLimiter(
-					middleware.NewRateLimiterMemoryStore(rate.Limit(20)),
-				)},
+			},
 		})
 
 		// GET ABI .json
@@ -122,9 +154,7 @@ func main() {
 			},
 			Middlewares: []echo.MiddlewareFunc{
 				apis.ActivityLogger(app),
-				middleware.RateLimiter(
-					middleware.NewRateLimiterMemoryStore(rate.Limit(20)),
-				)},
+			},
 		})
 
 		// POST ABI decode calldata
@@ -200,9 +230,7 @@ func main() {
 			},
 			Middlewares: []echo.MiddlewareFunc{
 				apis.ActivityLogger(app),
-				middleware.RateLimiter(
-					middleware.NewRateLimiterMemoryStore(rate.Limit(20)),
-				)},
+			},
 		})
 
 		e.Router.GET("/*", apis.StaticDirectoryHandler(ui.BuildDirFS, true))
