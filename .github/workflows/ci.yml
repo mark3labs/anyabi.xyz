@@ -1,3 +1,5 @@
+env:
+  PUBLIC_API_URL: 'https://anyabi.xyz/api'
 name: build-and-deploy-prod
 
 on:
