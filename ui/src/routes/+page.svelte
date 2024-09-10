@@ -7,7 +7,8 @@
   import type { AutocompleteOption, PopupSettings } from '@skeletonlabs/skeleton'
   import { isAddress } from 'ethers'
   import { Pulse } from 'svelte-loading-spinners'
-  import { PUBLIC_API_URL } from '$env/static/public'
+
+  const PUBLIC_API_URL = 'https://anyabi.xyz' // TODO update UI
 
   storeHighlightJs.set(hljs)
 
