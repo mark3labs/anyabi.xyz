@@ -15,7 +15,6 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 	_ "github.com/mark3labs/anyabi.xyz/migrations"
-	"github.com/mark3labs/anyabi.xyz/ui"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -102,6 +101,11 @@ func main() {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 
+		e.Router.GET(
+			"/*",
+			apis.StaticDirectoryHandler(os.DirFS("./pb_public"), true),
+		)
+
 		rateLimiterConfig := middleware.RateLimiterConfig{
 			Skipper: middleware.DefaultSkipper,
 			Store:   middleware.NewRateLimiterMemoryStore(rate.Limit(30)),
@@ -126,6 +130,7 @@ func main() {
 				return next(c)
 			}
 		})
+
 		// GET ABI
 		e.Router.AddRoute(echo.Route{
 			Method: http.MethodGet,
@@ -252,8 +257,6 @@ func main() {
 				apis.ActivityLogger(app),
 			},
 		})
-
-		e.Router.GET("/*", apis.StaticDirectoryHandler(ui.BuildDirFS, true))
 
 		return nil
 	})
