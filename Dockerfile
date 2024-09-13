@@ -1,4 +1,4 @@
-FROM golang:1.18.2-alpine3.14 AS builder
+FROM golang:1.22.5-alpine AS builder
 WORKDIR /app
 RUN apk update && apk upgrade && apk add --no-cache ca-certificates
 RUN update-ca-certificates
@@ -7,7 +7,6 @@ RUN go mod download
 RUN CGO_ENABLED=0 go build -o pocketbase .
 
 FROM scratch
-
 WORKDIR /app
 COPY --from=builder /app/pb_public /app/pb_public
 COPY --from=builder /app/pocketbase /app/pocketbase

@@ -7,20 +7,22 @@ tasks:
   setup: 
     cmds:
       - go mod download
-      - pnpm --prefix ui install
 
-  backend_dev: air serve
-  
-  frontend_dev: pnpm --prefix ui dev
-
-  frontend_build: pnpm --prefix ui build
+  templ:
+    - templ generate --watch --proxy="http://localhost:8090" --open-browser=false -v
+    
+  server: 
+    - |
+      go run github.com/cosmtrek/air@v1.51.0 \
+      --build.cmd "go build -o tmp/bin/main" --build.bin "tmp/bin/main serve" --build.delay "100" \
+      --build.include_ext "go" \
+      --build.stop_on_error "false" \
+      --misc.clean_on_exit true
   
   dev:
-    deps: [backend_dev, frontend_dev]
+    deps: [server, templ]
 
   build:
-    deps: [setup, frontend_build]
+    deps: [setup]
     cmds: 
       - go build -o bin/anyabi
-
-  deploy: flyctl deploy

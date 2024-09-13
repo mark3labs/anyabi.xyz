@@ -9,6 +9,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"strings"
+
+	"github.com/a-h/templ"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
@@ -23,11 +30,6 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 	"golang.org/x/time/rate"
-	"io"
-	"log"
-	"net/http"
-	"os"
-	"strings"
 )
 
 type EtherscanResponse struct {
@@ -92,6 +94,7 @@ var (
 		"104.154.76.147": true,
 		"34.122.246.162": true,
 		"34.45.228.219":  true,
+		"35.193.6.125":   true,
 	}
 )
 
@@ -103,7 +106,13 @@ func main() {
 
 		e.Router.GET(
 			"/*",
-			apis.StaticDirectoryHandler(os.DirFS("./pb_public"), true),
+			apis.StaticDirectoryHandler(os.DirFS("./static"), false),
+		)
+		e.Router.GET(
+			"/",
+			func(c echo.Context) error {
+				return Render(c, http.StatusOK, Index())
+			},
 		)
 
 		rateLimiterConfig := middleware.RateLimiterConfig{
@@ -114,9 +123,14 @@ func main() {
 				return id, nil
 			},
 			ErrorHandler: func(context echo.Context, err error) error {
+				log.Println("Rate limit error: ", err)
 				return context.JSON(http.StatusForbidden, nil)
 			},
 			DenyHandler: func(context echo.Context, identifier string, err error) error {
+				log.Println(
+					"Rate limiting IP: ",
+					context.Request().Header.Get("Fly-Client-IP"),
+				)
 				return context.JSON(http.StatusTooManyRequests, nil)
 			},
 		}
@@ -270,6 +284,18 @@ func main() {
 	}
 }
 
+// This custom Render replaces Echo's echo.Context.Render() with templ's templ.Component.Render().
+func Render(ctx echo.Context, statusCode int, t templ.Component) error {
+	buf := templ.GetBuffer()
+	defer templ.ReleaseBuffer(buf)
+
+	if err := t.Render(ctx.Request().Context(), buf); err != nil {
+		return err
+	}
+
+	return ctx.HTML(statusCode, buf.String())
+}
+
 func getABI(
 	app *pocketbase.PocketBase,
 	chainId, address string,
@@ -395,6 +421,10 @@ func getAbiFromEtherscan(
 		return "", nil, err
 	}
 
+	if result.Result[0].ContractName == "" {
+		return "", nil, err
+	}
+
 	// Extract ABI from interface{} type
 	var abiJson []map[string]interface{}
 	err = json.Unmarshal([]byte(result.Result[0].ABI), &abiJson)
@@ -432,6 +462,10 @@ func getAbiFromEtherscanNonStandard(
 	var result EtherscanResponseNonStandard
 	err = json.Unmarshal(responseBody, &result)
 	if err != nil {
+		return "", nil, err
+	}
+
+	if result.Result.ContractName == "" {
 		return "", nil, err
 	}
 
