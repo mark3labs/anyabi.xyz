@@ -31,7 +31,7 @@ var etherscanConfig map[string]string = map[string]string{
 	"168587773":        "https://api-sepolia.blastscan.io/api",
 	"3636":             "https://blockscout.botanixlabs.dev",
 	"56":               "https://api.bscscan.com/api",
-	"97":               "https://testnet.bscscan.com/api",
+	"97":               "https://api-testnet.bscscan.com/api",
 	"4999":             "https://explorer.blackfort.network/api",
 	"4777":             "https://testnet-explorer.blackfort.network/api",
 	"42220":            "https://api.celoscan.io/api",
