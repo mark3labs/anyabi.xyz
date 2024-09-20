@@ -142,7 +142,7 @@ var etherscanConfig map[string]string = map[string]string{
 	"534351":           "https://api-sepolia.scrollscan.com/api",
 	"1329":             "https://seitrace.com/pacific-1/api",
 	"11155111":         "https://api-sepolia.etherscan.io/api",
-	"11011":            "https://shape-sepolia-explorer.alchemy.com/api/v2",
+	"11011":            "https://explorer-sepolia.shape.network/api/v2",
 	"157":              "https://puppyscan.shib.io/api",
 	"148":              "https://explorer.evm.shimmer.network/api",
 	"1073":             "https://explorer.evm.testnet.shimmer.network/api",
