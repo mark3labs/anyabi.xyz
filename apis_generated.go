@@ -163,4 +163,5 @@ var etherscanConfig map[string]string = map[string]string{
 	"7777777":          "https://explorer.zora.energy/api",
 	"999999999":        "https://sepolia.explorer.zora.energy/api",
 	"999":              "https://testnet.explorer.zora.energy/api",
+	 "196":              "https://www.oklink.com/api/v5/explorer/xlayer/api",
 }

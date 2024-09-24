@@ -394,16 +394,27 @@ func getCachedABI(
 func getAbiFromEtherscan(
 	chainId, address string,
 ) (string, []map[string]interface{}, error) {
+	client := &http.Client{}
+	apiKey := os.Getenv("CHAIN_" + chainId + "_ETHERSCAN_KEY")
 	apiUrl := fmt.Sprintf(
 		"%s?module=contract&action=getsourcecode&address=%s&apikey=%s",
 		etherscanConfig[chainId],
 		address,
-		os.Getenv("CHAIN_"+chainId+"_ETHERSCAN_KEY"),
+		apiKey,
 	)
 	log.Println(apiUrl)
 
+	request, err := http.NewRequest(http.MethodGet, apiUrl, nil)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if strings.Contains(apiUrl, "oklink") {
+		request.Header.Add("Ok-Access-Key", apiKey)
+	}
+
 	// Send GET request to Etherscan API
-	response, err := http.Get(apiUrl)
+	response, err := client.Do(request)
 	if err != nil {
 		return "", nil, err
 	}
