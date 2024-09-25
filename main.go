@@ -91,16 +91,6 @@ type SourcifyResponse struct {
 	Version int      `json:"version"`
 }
 
-var (
-	bannedIPs = map[string]bool{
-		"104.154.76.147": true,
-		"34.122.246.162": true,
-		"34.45.228.219":  true,
-		"35.193.6.125":   true,
-		"34.122.96.134":  true,
-	}
-)
-
 func main() {
 	godotenv.Load()
 	sentry.Init(sentry.ClientOptions{
@@ -109,6 +99,15 @@ func main() {
 	defer sentry.Flush(time.Second * 5)
 
 	app := pocketbase.New()
+
+	// loosely check if it was executed using "go run"
+	isGoRun := strings.HasPrefix(os.Args[0], os.TempDir())
+
+	migratecmd.MustRegister(app, app.RootCmd, &migratecmd.Options{
+		// enable auto creation of migration files when making collection changes in the Admin UI
+		// (the isGoRun check is to enable it only during development)
+		Automigrate: isGoRun,
+	})
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 
@@ -152,7 +151,10 @@ func main() {
 
 		e.Router.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 			return func(c echo.Context) error {
-				if _, ok := bannedIPs[c.Request().Header.Get("Fly-Client-IP")]; ok {
+				ip := c.Request().Header.Get("Fly-Client-IP")
+				record, err := app.Dao().
+					FindFirstRecordByData("bannedIPs", "ip", ip)
+				if err == nil && record.Get("ip") == ip {
 					return echo.NewHTTPError(http.StatusForbidden)
 				}
 				return next(c)
