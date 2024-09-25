@@ -7,6 +7,7 @@ toolchain go1.22.5
 require (
 	github.com/a-h/templ v0.2.778
 	github.com/ethereum/go-ethereum v1.11.2
+	github.com/getsentry/sentry-go v0.29.0
 	github.com/joho/godotenv v1.3.0
 	github.com/labstack/echo/v5 v5.0.0-20220201181537-ed2888cfa198
 	github.com/pocketbase/dbx v1.10.0
@@ -48,7 +49,6 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.1 // indirect
 	github.com/ganigeorgiev/fexpr v0.3.0 // indirect
-	github.com/getsentry/sentry-go v0.29.0 // indirect
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
