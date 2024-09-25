@@ -14,10 +14,12 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/a-h/templ"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/getsentry/sentry-go"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
@@ -101,6 +103,11 @@ var (
 
 func main() {
 	godotenv.Load()
+	sentry.Init(sentry.ClientOptions{
+		Dsn: os.Getenv("SENTRY_DSN"),
+	})
+	defer sentry.Flush(time.Second * 5)
+
 	app := pocketbase.New()
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
@@ -125,12 +132,18 @@ func main() {
 			},
 			ErrorHandler: func(context echo.Context, err error) error {
 				log.Println("Rate limit error: ", err)
+				sentry.CaptureException(err)
 				return context.JSON(http.StatusForbidden, nil)
 			},
 			DenyHandler: func(context echo.Context, identifier string, err error) error {
 				log.Println(
 					"Rate limiting IP: ",
 					context.Request().Header.Get("Fly-Client-IP"),
+				)
+				sentry.CaptureMessage(
+					"Rate limiting IP: " + context.Request().Header.Get(
+						"Fly-Client-IP",
+					),
 				)
 				return context.JSON(http.StatusTooManyRequests, nil)
 			},
@@ -222,6 +235,7 @@ func main() {
 				// decode txInput method signature
 				decodedSig, err := hex.DecodeString(request.CallData[2:10])
 				if err != nil {
+					sentry.CaptureException(err)
 					fmt.Fprintf(
 						os.Stderr,
 						"Error decoding signature: %v\n",
@@ -233,6 +247,7 @@ func main() {
 				// decode txInput Payload
 				callDataArgs, err := hex.DecodeString(request.CallData[10:])
 				if err != nil {
+					sentry.CaptureException(err)
 					fmt.Fprintf(os.Stderr, "Error decoding data: %v\n", err)
 					return err
 				}
@@ -242,12 +257,14 @@ func main() {
 				metadata := &bind.MetaData{ABI: string(stringAbi)}
 				ABI, err := metadata.GetAbi()
 				if err != nil {
+					sentry.CaptureException(err)
 					fmt.Fprintf(os.Stderr, "Error parsing ABI: %v\n", err)
 					return err
 				}
 
 				method, err := ABI.MethodById(decodedSig)
 				if err != nil {
+					sentry.CaptureException(err)
 					fmt.Fprintf(os.Stderr, "Error finding method: %v\n", err)
 					return err
 				}
@@ -255,6 +272,8 @@ func main() {
 				data := make(map[string]interface{})
 				err = method.Inputs.UnpackIntoMap(data, callDataArgs)
 				if err != nil {
+
+					sentry.CaptureException(err)
 					fmt.Fprintf(os.Stderr, "Error unpacking values: %v\n", err)
 					return err
 				}
@@ -318,6 +337,7 @@ func getABI(
 	if abi != nil {
 		err := saveABI(app, chainId, address, name, abi)
 		if err != nil {
+			sentry.CaptureException(err)
 			log.Println(err)
 		}
 		log.Println("ABI found on Etherscan")
@@ -329,6 +349,7 @@ func getABI(
 	if abi != nil {
 		err := saveABI(app, chainId, address, name, abi)
 		if err != nil {
+			sentry.CaptureException(err)
 			log.Println(err)
 		}
 		log.Println("ABI found on Etherscan")
@@ -340,6 +361,7 @@ func getABI(
 	if abi != nil {
 		err := saveABI(app, chainId, address, name, abi)
 		if err != nil {
+			sentry.CaptureException(err)
 			log.Println(err)
 		}
 		log.Println("ABI found on Routescan")
@@ -352,6 +374,7 @@ func getABI(
 	if abi != nil {
 		err := saveABI(app, chainId, address, name, abi)
 		if err != nil {
+			sentry.CaptureException(err)
 			log.Println(err)
 		}
 		log.Println("ABI found on Sourcify")
@@ -364,6 +387,7 @@ func getABI(
 	if abi != nil {
 		err := saveABI(app, chainId, address, name, abi)
 		if err != nil {
+			sentry.CaptureException(err)
 			log.Println(err)
 		}
 		log.Println("ABI found on Sourcify")
@@ -386,6 +410,7 @@ func getCachedABI(
 	var abiJson []map[string]interface{}
 	err = json.Unmarshal([]byte(abiString), &abiJson)
 	if err != nil {
+		sentry.CaptureException(err)
 		return "", nil, err
 	}
 	return records[0].GetString("name"), abiJson, nil
@@ -441,6 +466,7 @@ func getAbiFromEtherscan(
 	var abiJson []map[string]interface{}
 	err = json.Unmarshal([]byte(result.Result[0].ABI), &abiJson)
 	if err != nil {
+		sentry.CaptureException(err)
 		return "", nil, err
 	}
 
