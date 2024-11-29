@@ -5,7 +5,7 @@ var etherscanConfig map[string]string = map[string]string{
 	"787":              "https://blockscout.acala.network/api",
 	"888888888":        "https://scan.ancient8.gg/api",
 	"28122024":         "https://scanv2-testnet.ancient8.gg/api",
-	"33139":            "https://api.apescan.io",
+	"33139":            "https://api.apescan.io/api",
 	"3993":             "https://exp-testnet.apexlayer.xyz/api",
 	"42161":            "https://api.arbiscan.io/api",
 	"42170":            "https://api-nova.arbiscan.io/api",
