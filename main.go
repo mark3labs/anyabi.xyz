@@ -2,7 +2,9 @@
 package main
 
 //go:generate go run ./codegen/gen_apis.go
+//go:generate go run ./codegen/gen_chain_ids.go
 //go:generate go fmt ./apis_generated.go
+//go:generate go fmt ./chain_ids_generated.go
 
 import (
 	"encoding/hex"

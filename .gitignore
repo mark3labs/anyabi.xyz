@@ -3,3 +3,4 @@ pocketbase
 .env
 tmp/
 bin/
+.aider*

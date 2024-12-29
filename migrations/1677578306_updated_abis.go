@@ -11,7 +11,7 @@ import (
 
 func init() {
 	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db);
+		dao := daos.New(db)
 
 		collection, err := dao.FindCollectionByNameOrId("dkzs3rh94mj101j")
 		if err != nil {
@@ -37,7 +37,7 @@ func init() {
 
 		return dao.SaveCollection(collection)
 	}, func(db dbx.Builder) error {
-		dao := daos.New(db);
+		dao := daos.New(db)
 
 		collection, err := dao.FindCollectionByNameOrId("dkzs3rh94mj101j")
 		if err != nil {

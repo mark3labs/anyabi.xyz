@@ -1,14 +1,13 @@
 module github.com/mark3labs/anyabi.xyz
 
-go 1.21
-
-toolchain go1.22.5
+go 1.23.3
 
 require (
-	github.com/a-h/templ v0.2.778
+	github.com/a-h/templ v0.2.793
+	github.com/axzilla/templui v0.28.2
 	github.com/ethereum/go-ethereum v1.11.2
 	github.com/getsentry/sentry-go v0.29.0
-	github.com/joho/godotenv v1.3.0
+	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v5 v5.0.0-20220201181537-ed2888cfa198
 	github.com/pocketbase/dbx v1.10.0
 	github.com/pocketbase/pocketbase v0.13.0
@@ -17,6 +16,7 @@ require (
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6 // indirect
+	github.com/Oudwins/tailwind-merge-go v0.2.0 // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/aws/aws-sdk-go v1.44.209 // indirect

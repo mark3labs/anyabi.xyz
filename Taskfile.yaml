@@ -18,9 +18,12 @@ tasks:
       --build.include_ext "go" \
       --build.stop_on_error "false" \
       --misc.clean_on_exit true
-  
+
+  tailwind:
+    - tailwindcss -i ./assets/css/input.css -o ./static/css/styles.css --watch
+
   dev:
-    deps: [server, templ]
+    deps: [templ, server, tailwind]
 
   build:
     deps: [setup]
