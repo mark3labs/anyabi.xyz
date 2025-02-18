@@ -3,8 +3,10 @@ package main
 
 //go:generate go run ./codegen/gen_apis.go
 //go:generate go run ./codegen/gen_chain_ids.go
+//go:generate go run ./codegen/gen_blockscout_apis.go
 //go:generate go fmt ./apis_generated.go
 //go:generate go fmt ./chain_ids_generated.go
+//go:generate go fmt ./blockscout_apis_generated.go
 
 import (
 	"encoding/hex"
@@ -360,6 +362,19 @@ func getABI(
 		return cleanName(name), abi, nil
 	}
 
+	// Add Blockscout check here
+	log.Println("Fetching ABI from Blockscout...")
+	name, abi, _ = getAbiFromBlockscout(chainId, address)
+	if abi != nil {
+		err := saveABI(app, chainId, address, name, abi)
+		if err != nil {
+			sentry.CaptureException(err)
+			log.Println(err)
+		}
+		log.Println("ABI found on Blockscout")
+		return cleanName(name), abi, nil
+	}
+
 	log.Println("Fetching ABI from Routescan...")
 	name, abi, _ = getAbiFromRoutescan(chainId, address)
 	if abi != nil {
@@ -645,6 +660,60 @@ func cleanName(name string) string {
 	} else {
 		return name
 	}
+}
+
+func getAbiFromBlockscout(
+	chainId, address string,
+) (string, []map[string]interface{}, error) {
+	// Check if we have a Blockscout API for this chain
+	apiUrl, exists := blockscoutConfig[chainId]
+	if !exists {
+		return "", nil, fmt.Errorf("no blockscout API for chain %s", chainId)
+	}
+
+	url := fmt.Sprintf(
+		"%s?module=contract&action=getsourcecode&address=%s",
+		apiUrl,
+		address,
+	)
+	log.Println(url)
+
+	// Send GET request to Blockscout API
+	response, err := http.Get(url)
+	if err != nil {
+		return "", nil, err
+	}
+	defer response.Body.Close()
+
+	// Read response body
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Try standard format first
+	var result EtherscanResponse
+	err = json.Unmarshal(responseBody, &result)
+	if err == nil && len(result.Result) > 0 && result.Result[0].ABI != "" {
+		var abiJson []map[string]interface{}
+		err = json.Unmarshal([]byte(result.Result[0].ABI), &abiJson)
+		if err == nil {
+			return result.Result[0].ContractName, abiJson, nil
+		}
+	}
+
+	// Try non-standard format
+	var nonStandardResult EtherscanResponseNonStandard
+	err = json.Unmarshal(responseBody, &nonStandardResult)
+	if err == nil && nonStandardResult.Result.ABI != "" {
+		var abiJson []map[string]interface{}
+		err = json.Unmarshal([]byte(nonStandardResult.Result.ABI), &abiJson)
+		if err == nil {
+			return nonStandardResult.Result.ContractName, abiJson, nil
+		}
+	}
+
+	return "", nil, fmt.Errorf("unable to get ABI from Blockscout")
 }
 
 func normalizeAbi(abi []map[string]interface{}) []map[string]interface{} {

@@ -178,8 +178,8 @@ var etherscanConfig map[string]string = map[string]string{
 	"7777777":          "https://explorer.zora.energy/api",
 	"999999999":        "https://sepolia.explorer.zora.energy/api",
 	"999":              "https://testnet.explorer.zora.energy/api",
-  "146":              "https://api.sonicscan.org/api",
-  "2741":             "https://api.abscan.org/api",
-  "80094":            "https://api.berascan.com/api",
-  "130":              "https://api.uniscan.xyz/api",
+	"146":              "https://api.sonicscan.org/api",
+	"2741":             "https://api.abscan.org/api",
+	"80094":            "https://api.berascan.com/api",
+	"130":              "https://api.uniscan.xyz/api",
 }
