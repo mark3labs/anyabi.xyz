@@ -18,6 +18,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -117,6 +118,8 @@ func main() {
 		// enable auto creation of migration files when making collection changes in the Admin UI
 		// (the isGoRun check is to enable it only during development)
 		Automigrate: isGoRun,
+		// Sets the directory where the migration files will be stored (default to "migrations")
+		Dir: "migrations",
 	})
 
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
@@ -328,7 +331,7 @@ func getABI(
 	}
 
 	log.Println("Fetching ABI from Etherscan...")
-	name, abi, _ = getAbiFromEtherscan(chainId, address)
+	name, abi, _ = getAbiFromEtherscan(app, chainId, address)
 	if abi != nil {
 		err := saveABI(app, chainId, address, name, abi)
 		if err != nil {
@@ -423,11 +426,29 @@ func getCachedABI(
 	return records[0].GetString("name"), abiJson, nil
 }
 
+func getEtherscanV1Key(app core.App, chainId uint64) string {
+    // First check environment variable
+    envKey := os.Getenv(fmt.Sprintf("CHAIN_%d_ETHERSCAN_KEY", chainId))
+    if envKey != "" {
+        return envKey
+    }
+
+    // If not found in env, check the etherscanKeys collection
+    record, err := app.FindFirstRecordByData("etherscanKeys", "chainId", chainId)
+    if err != nil {
+        return "NONE"
+    }
+
+    return record.GetString("key")
+}
+
 func getAbiFromEtherscan(
+	app core.App,
 	chainId, address string,
 ) (string, []map[string]interface{}, error) {
 	client := &http.Client{}
-	apiKey := os.Getenv("CHAIN_" + chainId + "_ETHERSCAN_KEY")
+	chainIdInt, _ := strconv.ParseUint(chainId, 10, 64)
+	apiKey := getEtherscanV1Key(app, chainIdInt)
 	apiUrl := fmt.Sprintf(
 		"%s?module=contract&action=getsourcecode&address=%s&apikey=%s",
 		etherscanConfig[chainId],
@@ -626,11 +647,23 @@ func saveABI(
 		return err
 	}
 
+	// Convert ABI to JSON string with no whitespace
+	abiBytes, err := json.Marshal(abi)
+	if err != nil {
+		return err
+	}
+
+	// Unmarshal back to remove any formatting/whitespace
+	var compactAbi []map[string]interface{}
+	if err := json.Unmarshal(abiBytes, &compactAbi); err != nil {
+		return err
+	}
+
 	record := core.NewRecord(collection)
 	record.Set("chainId", chainid)
 	record.Set("address", address) 
 	record.Set("name", name)
-	record.Set("abi", abi)
+	record.Set("abi", compactAbi)  // Store the compact version
 
 	if err := app.Save(record); err != nil {
 		return err
