@@ -56,10 +56,10 @@ templ Result(name string, abi []map[string]interface{}) {
 				<h4 class="uk-h4 mb-4">{ name }</h4>
 			}
 		}
-		<div class="bg-muted rounded-lg text-sm font-mono uk-overflow-auto h-svh">
-			<div class="p-4">
+		<div class="bg-muted rounded-lg text-sm uk-overflow-auto h-svh">
+			<pre class="p-4">
 				@templ.Raw(prettyJSON(abi))
-			</div>
+			</pre>
 		</div>
 	</div>
 }
