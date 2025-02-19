@@ -9,6 +9,7 @@ package main
 //go:generate go fmt ./blockscout_apis_generated.go
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -136,6 +137,13 @@ func main() {
 		)
 
 		e.Router.GET("/get-abi", func(c echo.Context) error {
+			// Set a longer timeout for the context
+			ctx, cancel := context.WithTimeout(c.Request().Context(), 30*time.Second)
+			defer cancel()
+			
+			// Use the new context for the request
+			c.SetRequest(c.Request().WithContext(ctx))
+			
 			sse := datastar.NewSSE(c.Response().Writer, c.Request())
 
 			var store GetABISignals
@@ -143,8 +151,6 @@ func main() {
 				sse.ExecuteScript("console.error('Error reading signals:', " + err.Error() + ")")
 				return nil
 			}
-
-			log.Println(store)
 
 			// Get ABI from database using the struct fields
 			name, abi, err := getABI(app, store.ChainId, store.Address)
