@@ -4,7 +4,7 @@ import "fmt"
 
 templ Index(chainIDs map[string]int64) {
 	<!DOCTYPE html>
-	<html lang="en" class="dark">
+	<html lang="en" class="dark uk-theme-violet">
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width"/>
@@ -34,21 +34,6 @@ templ Index(chainIDs map[string]int64) {
                         }));
                     }
                 });
-      </script>
-			<script>
-                const htmlElement = document.documentElement;
-                const __FRANKEN__ = JSON.parse(localStorage.getItem("__FRANKEN__") || "{}");
-
-                if (__FRANKEN__.mode === "dark" || (!__FRANKEN__.mode && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-                    htmlElement.classList.add("dark");
-                } else {
-                    htmlElement.classList.remove("dark");
-                }
-
-                htmlElement.classList.add(__FRANKEN__.theme || "uk-theme-zinc");
-                htmlElement.classList.add(__FRANKEN__.radii || "uk-radii-md");
-                htmlElement.classList.add(__FRANKEN__.shadows || "uk-shadows-sm");
-                htmlElement.classList.add(__FRANKEN__.font || "uk-font-sm");
       </script>
 			<script type="module" src="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/js/core.iife.js"></script>
 			<script type="module" src="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/js/icon.iife.js"></script>
@@ -95,7 +80,7 @@ templ Index(chainIDs map[string]int64) {
 								<div class="flex items-center">
 									<button
 										class="uk-btn uk-btn-primary"
-										data-attr-disabled="!$address || !$chainId" 
+										data-attr-disabled="!$address || !$chainId"
 										data-on-click="@get('/get-abi')"
 										data-indicator-fetching
 										data-show="!$fetching"

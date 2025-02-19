@@ -33,9 +33,9 @@ func escapeJSONForJS(v interface{}) template.JS {
 }
 
 templ Result(name string, abi []map[string]interface{}) {
-	<div id="result" class="max-h-[80vh]">
+	<div id="result" class="max-h-screen relative">
 		<h4 class="uk-h4 m-2">{ name }</h4>
-		<div class="relative h-full">
+		<div class="h-full relative">
 			if prettyJSON(abi) != "No ABI found" {
 				<button
 					id="copy"
@@ -45,7 +45,7 @@ templ Result(name string, abi []map[string]interface{}) {
 					<uk-icon id="icon" icon="copy" class="size-4"></uk-icon>
 				</button>
 			}
-			<pre class="mt-4 p-4 bg-muted rounded-lg text-sm overflow-y-auto h-full">
+			<pre class="mt-4 p-4 bg-muted rounded-lg text-sm uk-overflow-auto">
 				{ prettyJSON(abi) }
 			</pre>
 		</div>
