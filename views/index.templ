@@ -47,51 +47,49 @@ templ Index(chainIDs map[string]int64) {
 				</div>
 			</nav>
 			<main class="my-20">
-				<div class="min-h-screen flex items-center justify-center uk-container">
+				<div id="abi-explorer" class="min-h-screen flex items-center justify-center uk-container">
 					<div class="border border-border rounded-lg px-8 py-6 w-full" data-signals="{address:'', chainId:'1'}">
-						<div>
-							<h3 class="uk-h3 mb-6">ABI Explorer</h3>
-							<div class="flex gap-4">
-								<input
-									type="text"
-									class="uk-input flex-1"
-									placeholder="0x..."
-									data-bind-address
-								/>
-								<uk-select
-									id="chain-select"
-									cls-custom="button: uk-input-fake w-48; dropdown: w-48"
-									searchable
-									reactive
-									value="1"
-									data-on-ukselectinput="$chainId = evt.detail.value"
+						<h3 class="uk-h3 mb-6">ABI Explorer</h3>
+						<div class="flex gap-4">
+							<input
+								type="text"
+								class="uk-input flex-1"
+								placeholder="0x..."
+								data-bind-address
+							/>
+							<uk-select
+								id="chain-select"
+								cls-custom="button: uk-input-fake w-48; dropdown: w-48"
+								searchable
+								reactive
+								value="1"
+								data-on-ukselectinput="$chainId = evt.detail.value"
+							>
+								<select hidden>
+									for name, id := range chainIDs {
+										<option
+											value={ fmt.Sprint(id) }
+											data-keywords={ name }
+										>
+											{ name }
+										</option>
+									}
+								</select>
+							</uk-select>
+							<div class="flex items-center">
+								<button
+									class="uk-btn uk-btn-primary"
+									data-attr-disabled="!$address || !$chainId"
+									data-on-click="@get('/get-abi')"
+									data-indicator-fetching
+									data-show="!$fetching"
 								>
-									<select hidden>
-										for name, id := range chainIDs {
-											<option
-												value={ fmt.Sprint(id) }
-												data-keywords={ name }
-											>
-												{ name }
-											</option>
-										}
-									</select>
-								</uk-select>
-								<div class="flex items-center">
-									<button
-										class="uk-btn uk-btn-primary"
-										data-attr-disabled="!$address || !$chainId"
-										data-on-click="@get('/get-abi')"
-										data-indicator-fetching
-										data-show="!$fetching"
-									>
-										Get ABI
-									</button>
-									<div data-uk-spinner data-show="$fetching"></div>
-								</div>
+									Get ABI
+								</button>
+								<div data-uk-spinner data-show="$fetching"></div>
 							</div>
-							<div id="result" class="mt-4"></div>
 						</div>
+						<div id="result"></div>
 					</div>
 				</div>
 			</main>
