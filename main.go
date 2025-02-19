@@ -26,16 +26,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/getsentry/sentry-go"
 	"github.com/joho/godotenv"
-	"github.com/labstack/echo/v5"
-	"github.com/labstack/echo/v5/middleware"
 	_ "github.com/mark3labs/anyabi.xyz/migrations"
 	"github.com/mark3labs/anyabi.xyz/views"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
-	"github.com/pocketbase/pocketbase/core"
-	"github.com/pocketbase/pocketbase/forms"
-	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/core" 
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 	datastar "github.com/starfederation/datastar/sdk/go"
 	"golang.org/x/time/rate"
@@ -117,37 +113,37 @@ func main() {
 	// loosely check if it was executed using "go run"
 	isGoRun := strings.HasPrefix(os.Args[0], os.TempDir())
 
-	migratecmd.MustRegister(app, app.RootCmd, &migratecmd.Options{
+	migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
 		// enable auto creation of migration files when making collection changes in the Admin UI
 		// (the isGoRun check is to enable it only during development)
 		Automigrate: isGoRun,
 	})
 
-	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
 
 		e.Router.GET(
-			"/*",
-			apis.StaticDirectoryHandler(os.DirFS("./static"), false),
-		)
-		e.Router.GET(
 			"/",
-			func(c echo.Context) error {
+			func(c *core.RequestEvent) error {
 				return Render(c, http.StatusOK, views.Index(ChainIDs))
 			},
 		)
+		e.Router.GET(
+			"/static/{path...}",
+			apis.Static(os.DirFS("./static"), false),
+		)
 
-		e.Router.GET("/get-abi", func(c echo.Context) error {
+		e.Router.GET("/get-abi", func(c *core.RequestEvent) error {
 			// Set a longer timeout for the context
-			ctx, cancel := context.WithTimeout(c.Request().Context(), 30*time.Second)
+			ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 			defer cancel()
 			
 			// Use the new context for the request
-			c.SetRequest(c.Request().WithContext(ctx))
+			c.Request = c.Request.WithContext(ctx)
 			
-			sse := datastar.NewSSE(c.Response().Writer, c.Request())
+			sse := datastar.NewSSE(c.Response, c.Request)
 
 			var store GetABISignals
-			if err := datastar.ReadSignals(c.Request(), &store); err != nil {
+			if err := datastar.ReadSignals(c.Request, &store); err != nil {
 				sse.ExecuteScript("console.error('Error reading signals:', " + err.Error() + ")")
 				return nil
 			}
@@ -163,104 +159,62 @@ func main() {
 			return nil
 		})
 
-		rateLimiterConfig := middleware.RateLimiterConfig{
-			Skipper: middleware.DefaultSkipper,
-			Store:   middleware.NewRateLimiterMemoryStore(rate.Limit(30)),
-			IdentifierExtractor: func(ctx echo.Context) (string, error) {
-				id := ctx.Request().Header.Get("Fly-Client-IP")
-				return id, nil
-			},
-			ErrorHandler: func(context echo.Context, err error) error {
-				log.Println("Rate limit error: ", err)
-				sentry.CaptureException(err)
-				return context.JSON(http.StatusForbidden, nil)
-			},
-			DenyHandler: func(context echo.Context, identifier string, err error) error {
-				log.Println(
-					"Rate limiting IP: ",
-					context.Request().Header.Get("Fly-Client-IP"),
-				)
-				sentry.CaptureMessage(
-					"Rate limiting IP: " + context.Request().Header.Get(
-						"Fly-Client-IP",
-					),
-				)
-				return context.JSON(http.StatusTooManyRequests, nil)
-			},
-		}
-		e.Router.Use(middleware.RateLimiterWithConfig(rateLimiterConfig))
-
-		e.Router.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-			return func(c echo.Context) error {
-				ip := c.Request().Header.Get("Fly-Client-IP")
-				record, err := app.Dao().
-					FindFirstRecordByData("bannedIPs", "ip", ip)
-				if err == nil && record.Get("ip") == ip {
-					return echo.NewHTTPError(http.StatusForbidden)
-				}
-				return next(c)
+		limiter := rate.NewLimiter(rate.Every(time.Second), 30)
+		e.Router.GET("/*", func(c *core.RequestEvent) error {
+			ip := c.Request.Header.Get("Fly-Client-IP")
+			
+			// Check banned IPs
+			record, err := app.FindFirstRecordByData("bannedIPs", "ip", ip)
+			if err == nil && record.Get("ip") == ip {
+				return apis.NewForbiddenError("IP banned", nil)
 			}
+
+			// Rate limit check
+			if !limiter.Allow() {
+				log.Println("Rate limiting IP: ", ip)
+				sentry.CaptureMessage("Rate limiting IP: " + ip)
+				return apis.NewTooManyRequestsError("Too many requests", nil)
+			}
+
+			return c.Next()
 		})
 
 		// GET ABI
-		e.Router.AddRoute(echo.Route{
-			Method: http.MethodGet,
-			Path:   "/api/get-abi/:chainId/:address",
-			Handler: func(c echo.Context) error {
-				userIp := c.Request().Header.Get("Fly-Client-IP")
+		e.Router.GET("/api/get-abi/{chainId}/{address}", func(e *core.RequestEvent) error {
+				userIp := e.Request.Header.Get("Fly-Client-IP")
 				log.Println("User IP: ", userIp)
-				address := common.HexToAddress(c.PathParam("address")).String()
+				address := common.HexToAddress(e.Request.PathValue("address")).String()
 
 				log.Println("Fetching ABI...")
-				name, abi, err := getABI(app, c.PathParam("chainId"), address)
+				name, abi, err := getABI(app, e.Request.PathValue("chainId"), address)
 				if err != nil {
 					log.Println(err)
-					return c.JSON(
-						http.StatusNotFound,
-						map[string]interface{}{"error": err.Error()},
-					)
+					return e.NotFoundError("ABI not found", nil)
 				}
 				abi = normalizeAbi(abi)
-				return c.JSON(
+				return e.JSON(
 					http.StatusOK,
 					map[string]interface{}{"name": name, "abi": abi},
 				)
-			},
-			Middlewares: []echo.MiddlewareFunc{
-				apis.ActivityLogger(app),
-			},
-		})
+			})
 
 		// GET ABI .json
-		e.Router.AddRoute(echo.Route{
-			Method: http.MethodGet,
-			Path:   "/api/get-abi/:chainId/:address/abi.json",
-			Handler: func(c echo.Context) error {
-				address := common.HexToAddress(c.PathParam("address")).String()
+		e.Router.GET("/api/get-abi/{chainId}/{address}/abi.json", func(c *core.RequestEvent) error {
+			address := common.HexToAddress(c.Request.PathValue("address")).String()
 
-				_, abi, err := getABI(app, c.PathParam("chainId"), address)
-				if err != nil {
-					return c.JSON(
-						http.StatusNotFound,
-						map[string]interface{}{"error": err.Error()},
-					)
-				}
-				abi = normalizeAbi(abi)
-				return c.JSON(http.StatusOK, abi)
-			},
-			Middlewares: []echo.MiddlewareFunc{
-				apis.ActivityLogger(app),
-			},
+			_, abi, err := getABI(app, c.Request.PathValue("chainId"), address)
+			if err != nil {
+				return c.NotFoundError("ABI not found", nil)
+			}
+			abi = normalizeAbi(abi)
+			return c.JSON(http.StatusOK, abi)
 		})
 
 		// POST ABI decode calldata
-		e.Router.AddRoute(echo.Route{
-			Method: http.MethodPost,
-			Path:   "/api/get-abi/:chainId/:address/decode",
-			Handler: func(c echo.Context) error {
-				address := common.HexToAddress(c.PathParam("address")).String()
+		e.Router.POST("/api/get-abi/{chainId}/{address}/decode", func(c *core.RequestEvent) error {
+				address := common.HexToAddress(c.Request.PathValue("address")).String()
 
-				name, abi, err := getABI(app, c.PathParam("chainId"), address)
+				name, abi, err := getABI(app, c.Request.PathValue("chainId"), address)
 				if err != nil {
 					return c.JSON(
 						http.StatusNotFound,
@@ -273,7 +227,9 @@ func main() {
 					CallData string `json:"calldata"`
 				}
 
-				c.Bind(&request)
+				if err := c.BindBody(&request); err != nil {
+					return err
+				}
 
 				// decode txInput method signature
 				decodedSig, err := hex.DecodeString(request.CallData[2:10])
@@ -330,16 +286,9 @@ func main() {
 					},
 				)
 			},
-			Middlewares: []echo.MiddlewareFunc{
-				apis.ActivityLogger(app),
-			},
-		})
+		)
 
-		return nil
-	})
-
-	migratecmd.MustRegister(app, app.RootCmd, &migratecmd.Options{
-		Automigrate: true, // auto creates migration files when making collection changes
+		return e.Next()
 	})
 
 	if err := app.Start(); err != nil {
@@ -347,16 +296,19 @@ func main() {
 	}
 }
 
-// This custom Render replaces Echo's echo.Context.Render() with templ's templ.Component.Render().
-func Render(ctx echo.Context, statusCode int, t templ.Component) error {
+// Render renders a templ.Component with the given status code
+func Render(e *core.RequestEvent, statusCode int, t templ.Component) error {
 	buf := templ.GetBuffer()
 	defer templ.ReleaseBuffer(buf)
 
-	if err := t.Render(ctx.Request().Context(), buf); err != nil {
+	if err := t.Render(e.Request.Context(), buf); err != nil {
 		return err
 	}
 
-	return ctx.HTML(statusCode, buf.String())
+	e.Response.Header().Set("Content-Type", "text/html")
+	e.Response.WriteHeader(statusCode)
+	_, err := e.Response.Write(buf.Bytes())
+	return err
 }
 
 func getABI(
@@ -457,8 +409,7 @@ func getCachedABI(
 	app *pocketbase.PocketBase,
 	chainId, address string,
 ) (string, []map[string]interface{}, error) {
-	records, err := app.Dao().
-		FindRecordsByExpr("abis", dbx.NewExp("chainid = {:chainid} and address = {:address}", dbx.Params{"chainid": chainId, "address": address}))
+	records, err := app.FindAllRecords("abis", dbx.NewExp("chainid = {:chainid} and address = {:address}", dbx.Params{"chainid": chainId, "address": address}))
 	if err != nil || len(records) == 0 {
 		return "", nil, err
 	}
@@ -670,21 +621,18 @@ func saveABI(
 	chainid, address, name string,
 	abi []map[string]interface{},
 ) error {
-	collection, err := app.Dao().FindCollectionByNameOrId("abis")
+	collection, err := app.FindCollectionByNameOrId("abis")
 	if err != nil {
 		return err
 	}
 
-	record := models.NewRecord(collection)
-	form := forms.NewRecordUpsert(app, record)
-	form.LoadData(map[string]interface{}{
-		"chainId": chainid,
-		"address": address,
-		"name":    name,
-		"abi":     abi,
-	})
+	record := core.NewRecord(collection)
+	record.Set("chainId", chainid)
+	record.Set("address", address) 
+	record.Set("name", name)
+	record.Set("abi", abi)
 
-	if err := form.Submit(); err != nil {
+	if err := app.Save(record); err != nil {
 		return err
 	}
 
