@@ -37,29 +37,29 @@ func escapeJSONForJS(v interface{}) template.JS {
 }
 
 templ Result(name string, abi []map[string]interface{}) {
-    <div id="result" class="mt-4">
-        if prettyJSON(abi) != "No ABI found" {
-            <div class="flex justify-between items-center mb-4">
-                <h4 class="uk-h4 m-0">{ name }</h4>
-                <button
-                    class="uk-btn uk-btn-sm uk-btn-default flex items-center gap-2"
-                    data-on-click={ "navigator.clipboard.writeText(" + string(escapeJSONForJS(abi)) + "); UIkit.notification({message: 'Copied to clipboard!', status: 'primary', pos: 'top-right'})" }
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
-                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
-                    </svg>
-                </button>
-            </div>
-        } else {
-            if name != "" {
-                <h4 class="uk-h4 mb-4">{ name }</h4>
-            }
-        }
-        <div class="bg-muted rounded-lg text-sm font-mono uk-overflow-auto h-96">
-            <div class="p-4">
-                @templ.Raw(prettyJSON(abi))
-            </div>
-        </div>
-    </div>
+	<div id="result" class="mt-4">
+		if prettyJSON(abi) != "No ABI found" {
+			<div class="flex justify-between items-center mb-4">
+				<h4 class="uk-h4 m-0">{ name }</h4>
+				<button
+					class="uk-btn uk-btn-sm uk-btn-default flex items-center gap-2"
+					data-on-click={ "navigator.clipboard.writeText(" + string(escapeJSONForJS(abi)) + "); UIkit.notification({message: 'Copied to clipboard!', status: 'primary', pos: 'top-right'})" }
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+						<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+					</svg>
+				</button>
+			</div>
+		} else {
+			if name != "" {
+				<h4 class="uk-h4 mb-4">{ name }</h4>
+			}
+		}
+		<div class="bg-muted rounded-lg text-sm font-mono uk-overflow-auto h-svh">
+			<div class="p-4">
+				@templ.Raw(prettyJSON(abi))
+			</div>
+		</div>
+	</div>
 }
