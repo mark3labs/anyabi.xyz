@@ -1,0 +1,53 @@
+package views
+
+import (
+	"encoding/json"
+	"html/template"
+)
+
+func prettyJSON(v interface{}) string {
+	if v == nil || v == "null" {
+		return "No ABI found"
+	}
+	// Check for empty slice
+	if slice, ok := v.([]map[string]interface{}); ok && len(slice) == 0 {
+		return "No ABI found"
+	}
+	b, _ := json.MarshalIndent(v, "", "    ")
+	return string(b)
+}
+
+// Helper function to escape the JSON for JavaScript
+func escapeJSONForJS(v interface{}) template.JS {
+	if v == nil || v == "null" {
+		return "No ABI found"
+	}
+	// Check for empty slice
+	if slice, ok := v.([]map[string]interface{}); ok && len(slice) == 0 {
+		return "No ABI found"
+	}
+	b, _ := json.MarshalIndent(v, "", "    ")
+	// Convert to JS string and escape any problematic characters
+	jsonStr, _ := json.Marshal(string(b))
+	return template.JS(jsonStr)
+}
+
+templ Result(name string, abi []map[string]interface{}) {
+	<div id="result" class="max-h-[80vh]">
+		<h4 class="uk-h4 m-2">{ name }</h4>
+		<div class="relative h-full">
+			if prettyJSON(abi) != "No ABI found" {
+				<button
+					id="copy"
+					class="uk-btn uk-btn-sm uk-btn-default absolute right-2 top-2 z-10"
+					data-on-click={ "navigator.clipboard.writeText(" + string(escapeJSONForJS(abi)) + "); UIkit.notification({message: 'Copied to clipboard!', status: 'primary', pos: 'top-right'})" }
+				>
+					<uk-icon id="icon" icon="copy" class="size-4"></uk-icon>
+				</button>
+			}
+			<pre class="mt-4 p-4 bg-muted rounded-lg text-sm overflow-y-auto h-full">
+				{ prettyJSON(abi) }
+			</pre>
+		</div>
+	</div>
+}

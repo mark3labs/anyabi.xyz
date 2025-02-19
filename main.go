@@ -28,6 +28,7 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 	_ "github.com/mark3labs/anyabi.xyz/migrations"
+	"github.com/mark3labs/anyabi.xyz/views"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
@@ -35,8 +36,14 @@ import (
 	"github.com/pocketbase/pocketbase/forms"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
+	datastar "github.com/starfederation/datastar/sdk/go"
 	"golang.org/x/time/rate"
 )
+
+type GetABISignals struct {
+	Address string `json:"address"`
+	ChainId string `json:"chainId"`
+}
 
 type EtherscanResponse struct {
 	Status  string `json:"status"`
@@ -96,7 +103,9 @@ type SourcifyResponse struct {
 }
 
 func main() {
-	godotenv.Load()
+	if err := godotenv.Load("./.env"); err != nil {
+		log.Println("No .env file found")
+	}
 	sentry.Init(sentry.ClientOptions{
 		Dsn: os.Getenv("SENTRY_DSN"),
 	})
@@ -122,9 +131,31 @@ func main() {
 		e.Router.GET(
 			"/",
 			func(c echo.Context) error {
-				return Render(c, http.StatusOK, Index())
+				return Render(c, http.StatusOK, views.Index(ChainIDs))
 			},
 		)
+
+		e.Router.GET("/get-abi", func(c echo.Context) error {
+			sse := datastar.NewSSE(c.Response().Writer, c.Request())
+
+			var store GetABISignals
+			if err := datastar.ReadSignals(c.Request(), &store); err != nil {
+				sse.ExecuteScript("console.error('Error reading signals:', " + err.Error() + ")")
+				return nil
+			}
+
+			log.Println(store)
+
+			// Get ABI from database using the struct fields
+			name, abi, err := getABI(app, store.ChainId, store.Address)
+			if err != nil {
+				sse.MergeFragmentTempl(views.Result("", nil))
+				return nil
+			}
+
+			sse.MergeFragmentTempl(views.Result(name, abi))
+			return nil
+		})
 
 		rateLimiterConfig := middleware.RateLimiterConfig{
 			Skipper: middleware.DefaultSkipper,

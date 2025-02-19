@@ -1,6 +1,6 @@
-pb_data/
-pocketbase
 .env
-tmp/
+pb_data/
 bin/
 .aider*
+*.txt
+tmp/

@@ -1,0 +1,115 @@
+package views
+
+import "fmt"
+
+templ Index(chainIDs map[string]int64) {
+	<!DOCTYPE html>
+	<html lang="en" class="dark">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width"/>
+			<title>ABI Explorer</title>
+			<link rel="preconnect" href="https://rsms.me/"/>
+			<link rel="stylesheet" href="https://rsms.me/inter/inter.css"/>
+			<style>
+                :root {
+                    font-family: Inter, sans-serif;
+                    font-feature-settings: "liga" 1, "calt" 1;
+                }
+                @supports (font-variation-settings: normal) {
+                    :root {
+                        font-family: InterVariable, sans-serif;
+                    }
+                }
+            </style>
+			<link rel="stylesheet" href="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/css/core.min.css"/>
+			<link rel="stylesheet" href="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/css/utilities.min.css"/>
+			<script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.7/bundles/datastar.js"></script>
+			<script>
+                window.addEventListener("uk-select:input", function(e) {
+                    const chainSelect = document.getElementById('chain-select');
+                    if (chainSelect) {
+                        chainSelect.dispatchEvent(new CustomEvent('ukselectinput', {
+                            detail: { value: e.detail.value }
+                        }));
+                    }
+                });
+      </script>
+			<script>
+                const htmlElement = document.documentElement;
+                const __FRANKEN__ = JSON.parse(localStorage.getItem("__FRANKEN__") || "{}");
+
+                if (__FRANKEN__.mode === "dark" || (!__FRANKEN__.mode && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+                    htmlElement.classList.add("dark");
+                } else {
+                    htmlElement.classList.remove("dark");
+                }
+
+                htmlElement.classList.add(__FRANKEN__.theme || "uk-theme-zinc");
+                htmlElement.classList.add(__FRANKEN__.radii || "uk-radii-md");
+                htmlElement.classList.add(__FRANKEN__.shadows || "uk-shadows-sm");
+                htmlElement.classList.add(__FRANKEN__.font || "uk-font-sm");
+      </script>
+			<script type="module" src="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/js/core.iife.js"></script>
+			<script type="module" src="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/js/icon.iife.js"></script>
+		</head>
+		<body class="bg-background text-foreground">
+			<nav class="w-full border-b border-border bg-background">
+				<div class="uk-container">
+					<div class="flex h-14 items-center">
+						<a href="/" class="uk-h4 m-0">Any ABI</a>
+					</div>
+				</div>
+			</nav>
+			<main class="my-20">
+				<div class="min-h-screen flex items-center justify-center uk-container">
+					<div class="border border-border rounded-lg px-8 py-6 w-full" data-signals="{address:'', chainId:'1'}">
+						<div>
+							<h3 class="uk-h3 mb-6">ABI Explorer</h3>
+							<div class="flex gap-4">
+								<input
+									type="text"
+									class="uk-input flex-1"
+									placeholder="0x..."
+									data-bind-address
+								/>
+								<uk-select
+									id="chain-select"
+									cls-custom="button: uk-input-fake w-48; dropdown: w-48"
+									searchable
+									reactive
+									value="1"
+									data-on-ukselectinput="$chainId = evt.detail.value"
+								>
+									<select hidden>
+										for name, id := range chainIDs {
+											<option
+												value={ fmt.Sprint(id) }
+												data-keywords={ name }
+											>
+												{ name }
+											</option>
+										}
+									</select>
+								</uk-select>
+								<div class="flex items-center">
+									<button
+										class="uk-btn uk-btn-primary"
+										data-attr-disabled="!$address || !$chainId" 
+										data-on-click="@get('/get-abi')"
+										data-indicator-fetching
+										data-show="!$fetching"
+									>
+										Get ABI
+									</button>
+									<div data-uk-spinner data-show="$fetching"></div>
+								</div>
+							</div>
+							<div id="result" class="mt-4"></div>
+						</div>
+					</div>
+				</div>
+			</main>
+		</body>
+	</html>
+}
