@@ -31,7 +31,7 @@ func Index(chainIDs map[string]int64) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" class=\"dark uk-theme-violet\"><head><meta charset=\"utf-8\"><link rel=\"icon\" href=\"/static/favicon.png\"><meta name=\"viewport\" content=\"width=device-width\"><title>AnyABI - The easiest way to fetch an ABI</title><meta name=\"twitter:title\" content=\"AnyABI - The easiest way to fetch an ABI\"><meta name=\"description\" content=\"Quickly grab the ABI for ANY EVM smart contract on ANY EVM chain.\"><meta name=\"twitter:description\" content=\"Quickly grab the ABI for ANY EVM smart contract on ANY EVM chain.\"><meta name=\"twitter:image\" content=\"https://anyabi.xyz/static/thumbnail.png\"><meta property=\"og:image\" content=\"https://anyabi.xyz/static/thumbnail.png\"><meta name=\"twitter:card\" content=\"summary_large_image\"><meta http-equiv=\"content-security-policy\" content=\"\"><link rel=\"stylesheet\" href=\"https://unpkg.com/franken-ui@2.0.0-internal.45/dist/css/core.min.css\"><link rel=\"stylesheet\" href=\"https://unpkg.com/franken-ui@2.0.0-internal.45/dist/css/utilities.min.css\"><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.7/bundles/datastar.js\"></script><script>\n\t\t\t\twindow.addEventListener(\"uk-select:input\", function(e) {\n\t\t\t\t\tconst chainSelect = document.getElementById('chain-select');\n\t\t\t\t\tif (chainSelect) {\n\t\t\t\t\t\tchainSelect.dispatchEvent(new CustomEvent('ukselectinput', {\n\t\t\t\t\t\t\tdetail: { value: e.detail.value }\n\t\t\t\t\t\t}));\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t</script><script type=\"module\" src=\"https://unpkg.com/franken-ui@2.0.0-internal.45/dist/js/core.iife.js\"></script><script type=\"module\" src=\"https://unpkg.com/franken-ui@2.0.0-internal.45/dist/js/icon.iife.js\"></script></head><body class=\"bg-background text-foreground\"><nav class=\"w-full border-b border-border bg-background\"><div class=\"uk-container\"><div class=\"flex h-14 items-center\"><a href=\"/\" class=\"uk-h4 m-0 mr-4\"><img src=\"/static/logo.png\" class=\"h-10 inline-block mr-2\"> Any ABI</a></div></div></nav><main class=\"my-10\"><div id=\"abi-explorer\" class=\"flex items-center justify-center uk-container\"><div class=\"border border-border rounded-lg px-8 py-6 w-full h-auto\" data-signals=\"{address:&#39;&#39;, chainId:&#39;1&#39;}\"><h3 class=\"uk-h3 mb-6\">ABI Explorer</h3><div class=\"flex gap-4\"><input type=\"text\" class=\"uk-input flex-1\" placeholder=\"0x...\" data-bind-address> <uk-select id=\"chain-select\" cls-custom=\"button: uk-input-fake w-48; dropdown: w-48\" searchable reactive value=\"1\" data-on-ukselectinput=\"$chainId = evt.detail.value\"><select hidden>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" class=\"dark uk-theme-violet\"><head><meta charset=\"utf-8\"><link rel=\"icon\" href=\"/static/favicon.png\"><meta name=\"viewport\" content=\"width=device-width\"><title>AnyABI - The easiest way to fetch an ABI</title><meta name=\"twitter:title\" content=\"AnyABI - The easiest way to fetch an ABI\"><meta name=\"description\" content=\"Quickly grab the ABI for ANY EVM smart contract on ANY EVM chain.\"><meta name=\"twitter:description\" content=\"Quickly grab the ABI for ANY EVM smart contract on ANY EVM chain.\"><meta name=\"twitter:image\" content=\"https://anyabi.xyz/static/thumbnail.png\"><meta property=\"og:image\" content=\"https://anyabi.xyz/static/thumbnail.png\"><meta name=\"twitter:card\" content=\"summary_large_image\"><meta http-equiv=\"content-security-policy\" content=\"\"><link rel=\"stylesheet\" href=\"https://unpkg.com/franken-ui@2.0.0-internal.45/dist/css/core.min.css\"><link rel=\"stylesheet\" href=\"https://unpkg.com/franken-ui@2.0.0-internal.45/dist/css/utilities.min.css\"><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.7/bundles/datastar.js\"></script><script type=\"module\" src=\"https://unpkg.com/franken-ui@2.0.0-internal.45/dist/js/core.iife.js\"></script><script type=\"module\" src=\"https://unpkg.com/franken-ui@2.0.0-internal.45/dist/js/icon.iife.js\"></script></head><body class=\"bg-background text-foreground\"><nav class=\"w-full border-b border-border bg-background\"><div class=\"uk-container\"><div class=\"flex h-14 items-center\"><a href=\"/\" class=\"uk-h4 m-0 mr-4\"><img src=\"/static/logo.png\" class=\"h-10 inline-block mr-2\"> Any ABI</a></div></div></nav><main class=\"my-10\"><div id=\"abi-explorer\" class=\"flex items-center justify-center uk-container\"><div class=\"border border-border rounded-lg px-8 py-6 w-full h-auto\" data-signals=\"{address:&#39;&#39;, chainId:&#39;1&#39;}\"><h3 class=\"uk-h3 mb-6\">ABI Explorer</h3><div class=\"flex gap-4\"><input type=\"text\" class=\"uk-input flex-1\" placeholder=\"0x...\" data-bind-address> <uk-select id=\"chain-select\" cls-custom=\"button: uk-input-fake w-48; dropdown: w-48\" searchable reactive value=\"1\" data-on-uk-select:input__case.kebab=\"$chainId = evt.detail.value\"><select hidden>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -43,7 +43,7 @@ func Index(chainIDs map[string]int64) templ.Component {
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(id))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/index.templ`, Line: 69, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/index.templ`, Line: 59, Col: 33}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -56,7 +56,7 @@ func Index(chainIDs map[string]int64) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/index.templ`, Line: 70, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/index.templ`, Line: 60, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -69,7 +69,7 @@ func Index(chainIDs map[string]int64) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/index.templ`, Line: 72, Col: 17}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/index.templ`, Line: 62, Col: 17}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {

@@ -20,16 +20,6 @@ templ Index(chainIDs map[string]int64) {
 			<link rel="stylesheet" href="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/css/core.min.css"/>
 			<link rel="stylesheet" href="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/css/utilities.min.css"/>
 			<script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.7/bundles/datastar.js"></script>
-			<script>
-				window.addEventListener("uk-select:input", function(e) {
-					const chainSelect = document.getElementById('chain-select');
-					if (chainSelect) {
-						chainSelect.dispatchEvent(new CustomEvent('ukselectinput', {
-							detail: { value: e.detail.value }
-						}));
-					}
-				});
-			</script>
 			<script type="module" src="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/js/core.iife.js"></script>
 			<script type="module" src="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/js/icon.iife.js"></script>
 		</head>
@@ -61,7 +51,7 @@ templ Index(chainIDs map[string]int64) {
 								searchable
 								reactive
 								value="1"
-								data-on-ukselectinput="$chainId = evt.detail.value"
+								data-on-uk-select:input__case.kebab="$chainId = evt.detail.value"
 							>
 								<select hidden>
 									for name, id := range chainIDs {
