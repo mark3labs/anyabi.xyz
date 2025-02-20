@@ -12,7 +12,7 @@ tasks:
 
   build:
     cmds:
-      - go build -o bin/main .
+      - go build -o bin/anyabi .
     deps:
       - build:templ
 

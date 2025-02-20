@@ -84,7 +84,6 @@ Here's how to setup the project locally, develop an build.
 You will need to following installed in order to develop locally.
 
 - [Go](https://go.dev/)
-- [PNPM](https://pnpm.io/)
 - [Air](https://github.com/cosmtrek/air)
 
 
@@ -94,19 +93,14 @@ You will need to following installed in order to develop locally.
    ```sh
    git clone https://github.com/mark3labs/anyabi.xyz.git
    ```
-2. Install [Task](https://taskfile.dev/installation/), [PNPM](https://pnpm.io/installation) and [Air](https://github.com/cosmtrek/air#installation)
-
-3. Run the `setup` task
-   ```sh
-   task setup
-   ```
+2. Install [Task](https://taskfile.dev/installation/), and [Air](https://github.com/cosmtrek/air#installation)
 
 ### Development
 
-1. Run the `dev` task
+1. Run the `live` task
 
    ```sh
-   task dev
+   task live
    ```
    
 ### Building
