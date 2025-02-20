@@ -32,10 +32,9 @@ import (
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
-	"github.com/pocketbase/pocketbase/core" 
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 	datastar "github.com/starfederation/datastar/sdk/go"
-	"golang.org/x/time/rate"
 )
 
 type GetABISignals struct {
@@ -139,10 +138,10 @@ func main() {
 			// Set a longer timeout for the context
 			ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 			defer cancel()
-			
+
 			// Use the new context for the request
 			c.Request = c.Request.WithContext(ctx)
-			
+
 			sse := datastar.NewSSE(c.Response, c.Request)
 
 			var store GetABISignals
@@ -162,44 +161,24 @@ func main() {
 			return nil
 		})
 
-		limiter := rate.NewLimiter(rate.Every(time.Second), 30)
-		e.Router.GET("/*", func(c *core.RequestEvent) error {
-			ip := c.Request.Header.Get("Fly-Client-IP")
-			
-			// Check banned IPs
-			record, err := app.FindFirstRecordByData("bannedIPs", "ip", ip)
-			if err == nil && record.Get("ip") == ip {
-				return apis.NewForbiddenError("IP banned", nil)
-			}
-
-			// Rate limit check
-			if !limiter.Allow() {
-				log.Println("Rate limiting IP: ", ip)
-				sentry.CaptureMessage("Rate limiting IP: " + ip)
-				return apis.NewTooManyRequestsError("Too many requests", nil)
-			}
-
-			return c.Next()
-		})
-
 		// GET ABI
 		e.Router.GET("/api/get-abi/{chainId}/{address}", func(e *core.RequestEvent) error {
-				userIp := e.Request.Header.Get("Fly-Client-IP")
-				log.Println("User IP: ", userIp)
-				address := common.HexToAddress(e.Request.PathValue("address")).String()
+			userIp := e.RealIP()
+			log.Println("User IP: ", userIp)
+			address := common.HexToAddress(e.Request.PathValue("address")).String()
 
-				log.Println("Fetching ABI...")
-				name, abi, err := getABI(app, e.Request.PathValue("chainId"), address)
-				if err != nil {
-					log.Println(err)
-					return e.NotFoundError("ABI not found", nil)
-				}
-				abi = normalizeAbi(abi)
-				return e.JSON(
-					http.StatusOK,
-					map[string]interface{}{"name": name, "abi": abi},
-				)
-			})
+			log.Println("Fetching ABI...")
+			name, abi, err := getABI(app, e.Request.PathValue("chainId"), address)
+			if err != nil {
+				log.Println(err)
+				return e.NotFoundError("ABI not found", nil)
+			}
+			abi = normalizeAbi(abi)
+			return e.JSON(
+				http.StatusOK,
+				map[string]interface{}{"name": name, "abi": abi},
+			)
+		})
 
 		// GET ABI .json
 		e.Router.GET("/api/get-abi/{chainId}/{address}/abi.json", func(c *core.RequestEvent) error {
@@ -215,80 +194,80 @@ func main() {
 
 		// POST ABI decode calldata
 		e.Router.POST("/api/get-abi/{chainId}/{address}/decode", func(c *core.RequestEvent) error {
-				address := common.HexToAddress(c.Request.PathValue("address")).String()
+			address := common.HexToAddress(c.Request.PathValue("address")).String()
 
-				name, abi, err := getABI(app, c.Request.PathValue("chainId"), address)
-				if err != nil {
-					return c.JSON(
-						http.StatusNotFound,
-						map[string]interface{}{"error": err.Error()},
-					)
-				}
-				abi = normalizeAbi(abi)
-
-				var request struct {
-					CallData string `json:"calldata"`
-				}
-
-				if err := c.BindBody(&request); err != nil {
-					return err
-				}
-
-				// decode txInput method signature
-				decodedSig, err := hex.DecodeString(request.CallData[2:10])
-				if err != nil {
-					sentry.CaptureException(err)
-					fmt.Fprintf(
-						os.Stderr,
-						"Error decoding signature: %v\n",
-						err,
-					)
-					return err
-				}
-
-				// decode txInput Payload
-				callDataArgs, err := hex.DecodeString(request.CallData[10:])
-				if err != nil {
-					sentry.CaptureException(err)
-					fmt.Fprintf(os.Stderr, "Error decoding data: %v\n", err)
-					return err
-				}
-
-				stringAbi, _ := json.Marshal(abi)
-
-				metadata := &bind.MetaData{ABI: string(stringAbi)}
-				ABI, err := metadata.GetAbi()
-				if err != nil {
-					sentry.CaptureException(err)
-					fmt.Fprintf(os.Stderr, "Error parsing ABI: %v\n", err)
-					return err
-				}
-
-				method, err := ABI.MethodById(decodedSig)
-				if err != nil {
-					sentry.CaptureException(err)
-					fmt.Fprintf(os.Stderr, "Error finding method: %v\n", err)
-					return err
-				}
-
-				data := make(map[string]interface{})
-				err = method.Inputs.UnpackIntoMap(data, callDataArgs)
-				if err != nil {
-
-					sentry.CaptureException(err)
-					fmt.Fprintf(os.Stderr, "Error unpacking values: %v\n", err)
-					return err
-				}
-
+			name, abi, err := getABI(app, c.Request.PathValue("chainId"), address)
+			if err != nil {
 				return c.JSON(
-					http.StatusOK,
-					map[string]interface{}{
-						"name": name,
-						"abi":  abi,
-						"args": data,
-					},
+					http.StatusNotFound,
+					map[string]interface{}{"error": err.Error()},
 				)
-			},
+			}
+			abi = normalizeAbi(abi)
+
+			var request struct {
+				CallData string `json:"calldata"`
+			}
+
+			if err := c.BindBody(&request); err != nil {
+				return err
+			}
+
+			// decode txInput method signature
+			decodedSig, err := hex.DecodeString(request.CallData[2:10])
+			if err != nil {
+				sentry.CaptureException(err)
+				fmt.Fprintf(
+					os.Stderr,
+					"Error decoding signature: %v\n",
+					err,
+				)
+				return err
+			}
+
+			// decode txInput Payload
+			callDataArgs, err := hex.DecodeString(request.CallData[10:])
+			if err != nil {
+				sentry.CaptureException(err)
+				fmt.Fprintf(os.Stderr, "Error decoding data: %v\n", err)
+				return err
+			}
+
+			stringAbi, _ := json.Marshal(abi)
+
+			metadata := &bind.MetaData{ABI: string(stringAbi)}
+			ABI, err := metadata.GetAbi()
+			if err != nil {
+				sentry.CaptureException(err)
+				fmt.Fprintf(os.Stderr, "Error parsing ABI: %v\n", err)
+				return err
+			}
+
+			method, err := ABI.MethodById(decodedSig)
+			if err != nil {
+				sentry.CaptureException(err)
+				fmt.Fprintf(os.Stderr, "Error finding method: %v\n", err)
+				return err
+			}
+
+			data := make(map[string]interface{})
+			err = method.Inputs.UnpackIntoMap(data, callDataArgs)
+			if err != nil {
+
+				sentry.CaptureException(err)
+				fmt.Fprintf(os.Stderr, "Error unpacking values: %v\n", err)
+				return err
+			}
+
+			return c.JSON(
+				http.StatusOK,
+				map[string]interface{}{
+					"name": name,
+					"abi":  abi,
+					"args": data,
+				},
+			)
+		},
 		)
 
 		return e.Next()
@@ -427,19 +406,19 @@ func getCachedABI(
 }
 
 func getEtherscanV1Key(app core.App, chainId uint64) string {
-    // First check environment variable
-    envKey := os.Getenv(fmt.Sprintf("CHAIN_%d_ETHERSCAN_KEY", chainId))
-    if envKey != "" {
-        return envKey
-    }
+	// First check environment variable
+	envKey := os.Getenv(fmt.Sprintf("CHAIN_%d_ETHERSCAN_KEY", chainId))
+	if envKey != "" {
+		return envKey
+	}
 
-    // If not found in env, check the etherscanKeys collection
-    record, err := app.FindFirstRecordByData("etherscanKeys", "chainId", chainId)
-    if err != nil {
-        return "NONE"
-    }
+	// If not found in env, check the etherscanKeys collection
+	record, err := app.FindFirstRecordByData("etherscanKeys", "chainId", chainId)
+	if err != nil {
+		return "NONE"
+	}
 
-    return record.GetString("key")
+	return record.GetString("key")
 }
 
 func getAbiFromEtherscan(
@@ -661,9 +640,9 @@ func saveABI(
 
 	record := core.NewRecord(collection)
 	record.Set("chainId", chainid)
-	record.Set("address", address) 
+	record.Set("address", address)
 	record.Set("name", name)
-	record.Set("abi", compactAbi)  // Store the compact version
+	record.Set("abi", compactAbi) // Store the compact version
 
 	if err := app.Save(record); err != nil {
 		return err
