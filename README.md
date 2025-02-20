@@ -9,7 +9,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/mark3labs/anyabi.xyz">
-    <img src="ui/static/logo.png" alt="Logo" width="80" height="80">
+    <img src="static/logo.png" alt="Logo" width="80" height="80">
   </a>
 
 <h3 align="center">AnyABI.xyz</h3>
@@ -59,7 +59,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+[![Product Name Screen Shot][product-screenshot]](https://anyabi.xyz)
 
 
 
@@ -69,7 +69,7 @@ Quickly grab the ABI for ANY EVM smart contract on ANY EVM chain.
 
 ### Built With
 
-* [![Svelte][Svelte.dev]][Svelte-url]
+* [![Datastar][datastar-icon]][datastar-url]
 * [![Go][Go.dev]][Go-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -187,8 +187,8 @@ Project Link: [https://github.com/mark3labs/anyabi.xyz](https://github.com/mark3
 [issues-url]: https://github.com/mark3labs/anyabi.xyz/issues
 [license-shield]: https://img.shields.io/github/license/mark3labs/anyabi.xyz.svg?style=for-the-badge
 [license-url]: https://github.com/mark3labs/anyabi.xyz/blob/master/LICENSE.txt
-[product-screenshot]: screenshot.png
-[Svelte.dev]: https://img.shields.io/badge/Svelte-4A4A55?style=for-the-badge&logo=svelte&logoColor=FF3E00
-[Svelte-url]: https://svelte.dev/
+[product-screenshot]: static/thumbnail.png
+[datastar-icon]: https://data-star.dev/static/favicon/favicon-32x32-b8ff04b4c8a902b8e895cc65dd25042b9eca2eeed0ccebccff145c70c57c6f26.png
+[datastar-url]: https://data-star.dev/
 [Go.dev]: https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white
 [Go-url]: https://go.dev
