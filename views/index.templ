@@ -7,34 +7,29 @@ templ Index(chainIDs map[string]int64) {
 	<html lang="en" class="dark uk-theme-violet">
 		<head>
 			<meta charset="utf-8"/>
+			<link rel="icon" href="/static/favicon.png"/>
 			<meta name="viewport" content="width=device-width"/>
-			<title>ABI Explorer</title>
-			<link rel="preconnect" href="https://rsms.me/"/>
-			<link rel="stylesheet" href="https://rsms.me/inter/inter.css"/>
-			<style>
-                :root {
-                    font-family: Inter, sans-serif;
-                    font-feature-settings: "liga" 1, "calt" 1;
-                }
-                @supports (font-variation-settings: normal) {
-                    :root {
-                        font-family: InterVariable, sans-serif;
-                    }
-                }
-            </style>
+			<title>AnyABI - The easiest way to fetch an ABI</title>
+			<meta name="twitter:title" content="AnyABI - The easiest way to fetch an ABI"/>
+			<meta name="description" content="Quickly grab the ABI for ANY EVM smart contract on ANY EVM chain."/>
+			<meta name="twitter:description" content="Quickly grab the ABI for ANY EVM smart contract on ANY EVM chain."/>
+			<meta name="twitter:image" content="https://anyabi.xyz/static/thumbnail.png"/>
+			<meta property="og:image" content="https://anyabi.xyz/static/thumbnail.png"/>
+			<meta name="twitter:card" content="summary_large_image"/>
+			<meta http-equiv="content-security-policy" content=""/>
 			<link rel="stylesheet" href="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/css/core.min.css"/>
 			<link rel="stylesheet" href="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/css/utilities.min.css"/>
 			<script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-beta.7/bundles/datastar.js"></script>
 			<script>
-                window.addEventListener("uk-select:input", function(e) {
-                    const chainSelect = document.getElementById('chain-select');
-                    if (chainSelect) {
-                        chainSelect.dispatchEvent(new CustomEvent('ukselectinput', {
-                            detail: { value: e.detail.value }
-                        }));
-                    }
-                });
-      </script>
+				window.addEventListener("uk-select:input", function(e) {
+					const chainSelect = document.getElementById('chain-select');
+					if (chainSelect) {
+						chainSelect.dispatchEvent(new CustomEvent('ukselectinput', {
+							detail: { value: e.detail.value }
+						}));
+					}
+				});
+			</script>
 			<script type="module" src="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/js/core.iife.js"></script>
 			<script type="module" src="https://unpkg.com/franken-ui@2.0.0-internal.45/dist/js/icon.iife.js"></script>
 		</head>
@@ -42,7 +37,10 @@ templ Index(chainIDs map[string]int64) {
 			<nav class="w-full border-b border-border bg-background">
 				<div class="uk-container">
 					<div class="flex h-14 items-center">
-						<a href="/" class="uk-h4 m-0">Any ABI</a>
+						<a href="/" class="uk-h4 m-0 mr-4">
+							<img src="/static/logo.png" class="h-10 inline-block mr-2"/>
+							Any ABI
+						</a>
 					</div>
 				</div>
 			</nav>
