@@ -8,7 +8,7 @@ vars:
 tasks:
   build:templ:
     cmds:
-      - go run github.com/a-h/templ/cmd/templ@v0.3.819 generate -v
+      - go run github.com/a-h/templ/cmd/templ@latest generate -v
 
   build:
     cmds:
