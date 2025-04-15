@@ -182,4 +182,5 @@ var etherscanConfig map[string]string = map[string]string{
 	"2741":             "https://api.abscan.org/api",
 	"80094":            "https://api.berascan.com/api",
 	"130":              "https://api.uniscan.xyz/api",
+	"232":              "https://explorer-api.lens.xyz/api",
 }

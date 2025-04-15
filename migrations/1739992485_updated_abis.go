@@ -17,7 +17,7 @@ func init() {
 		// update collection data
 		if err := json.Unmarshal([]byte(`{
 			"indexes": [
-				"CREATE UNIQUE INDEX ` + "`" + `idx_ZkGudoPggx` + "`" + ` ON ` + "`" + `abis` + "`" + ` (\n  ` + "`" + `chainId` + "`" + `,\n  ` + "`" + `address` + "`" + `\n)"
+				"CREATE UNIQUE INDEX `+"`"+`idx_ZkGudoPggx`+"`"+` ON `+"`"+`abis`+"`"+` (\n  `+"`"+`chainId`+"`"+`,\n  `+"`"+`address`+"`"+`\n)"
 			]
 		}`), &collection); err != nil {
 			return err

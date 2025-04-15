@@ -62,5 +62,5 @@ var blockscoutConfig map[string]string = map[string]string{
 	"11155420":  "https://optimism-sepolia.blockscout.com/api",
 	"4999":      "https://blackfort.blockscout.com/api",
 	"137":       "https://polygon.blockscout.com/api",
-  "130":       "https://unichain.blockscout.com/api",
+	"130":       "https://unichain.blockscout.com/api",
 }

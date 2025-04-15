@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
-	"text/template" 
+	"text/template"
 
 	"github.com/mark3labs/anyabi.xyz/types"
 )

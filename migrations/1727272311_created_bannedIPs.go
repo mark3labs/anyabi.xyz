@@ -9,7 +9,7 @@ func init() {
 	m.Register(func(app core.App) error {
 		collection := core.NewBaseCollection("bannedIPs")
 		collection.Id = "ggalodjt1jwro34"
-		
+
 		collection.Fields.Add(
 			&core.TextField{
 				Id:       "pyv6mkxb",
