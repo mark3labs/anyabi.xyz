@@ -63,4 +63,5 @@ var blockscoutConfig map[string]string = map[string]string{
 	"4999":      "https://blackfort.blockscout.com/api",
 	"137":       "https://polygon.blockscout.com/api",
 	"130":       "https://unichain.blockscout.com/api",
+	"1923":			 "https://explorer.swellnetwork.io/api",
 }
