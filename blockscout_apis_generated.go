@@ -65,4 +65,5 @@ var blockscoutConfig map[string]string = map[string]string{
 	"130":       "https://unichain.blockscout.com/api",
 	"1923":			 "https://explorer.swellnetwork.io/api",
 	"55244": 		 "https://explorer.superposition.so/api",
+	"999":       "https://www.hyperscan.com/api",
 }
