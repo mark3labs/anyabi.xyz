@@ -66,5 +66,5 @@ var blockscoutConfig map[string]string = map[string]string{
 	"1923":      "https://explorer.swellnetwork.io/api",
 	"55244":     "https://explorer.superposition.so/api",
 	"999":       "https://www.hyperscan.com/api",
-	"98865":     "https://explorer.plumenetwork.xyz/api",
+	"98866":     "https://explorer.plume.org/api",
 }

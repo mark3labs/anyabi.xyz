@@ -419,4 +419,5 @@ var ChainIDs map[string]int64 = map[string]int64{
 	"Zora":                               7777777,
 	"Zora Sepolia":                       999999999,
 	"Zora Goerli Testnet":                999,
+	"Plume":															98866,
 }
