@@ -18,7 +18,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -309,27 +308,15 @@ func getABI(
 		return cleanName(name), abi, nil
 	}
 
-	log.Println("Fetching ABI from Etherscan...")
-	name, abi, _ = getAbiFromEtherscan(app, chainId, address)
+	log.Println("Fetching ABI from Etherscan V2...")
+	name, abi, _ = getAbiFromEtherscanV2(app, chainId, address)
 	if abi != nil {
 		err := saveABI(app, chainId, address, name, abi)
 		if err != nil {
 			sentry.CaptureException(err)
 			log.Println(err)
 		}
-		log.Println("ABI found on Etherscan")
-		return cleanName(name), abi, nil
-	}
-
-	log.Println("Fetching ABI from Etherscan...")
-	name, abi, _ = getAbiFromEtherscanNonStandard(chainId, address)
-	if abi != nil {
-		err := saveABI(app, chainId, address, name, abi)
-		if err != nil {
-			sentry.CaptureException(err)
-			log.Println(err)
-		}
-		log.Println("ABI found on Etherscan")
+		log.Println("ABI found on Etherscan V2")
 		return cleanName(name), abi, nil
 	}
 
@@ -421,32 +408,37 @@ func getEtherscanV1Key(app core.App, chainId uint64) string {
 	return record.GetString("key")
 }
 
-func getAbiFromEtherscan(
+func getEtherscanV2Key(app core.App) string {
+	// Get the Etherscan key for chain ID 1 (Ethereum mainnet)
+	envKey := os.Getenv("CHAIN_1_ETHERSCAN_KEY")
+	if envKey != "" {
+		return envKey
+	}
+
+	// If not found in env, check the etherscanKeys collection
+	record, err := app.FindFirstRecordByData("etherscanKeys", "chainId", uint64(1))
+	if err != nil {
+		return "NONE"
+	}
+
+	return record.GetString("key")
+}
+
+func getAbiFromEtherscanV2(
 	app core.App,
 	chainId, address string,
 ) (string, []map[string]interface{}, error) {
-	client := &http.Client{}
-	chainIdInt, _ := strconv.ParseUint(chainId, 10, 64)
-	apiKey := getEtherscanV1Key(app, chainIdInt)
+	apiKey := getEtherscanV2Key(app)
 	apiUrl := fmt.Sprintf(
-		"%s?module=contract&action=getsourcecode&address=%s&apikey=%s",
-		etherscanConfig[chainId],
+		"https://api.etherscan.io/v2/api?chainid=%s&module=contract&action=getsourcecode&address=%s&apikey=%s",
+		chainId,
 		address,
 		apiKey,
 	)
 	log.Println(apiUrl)
 
-	request, err := http.NewRequest(http.MethodGet, apiUrl, nil)
-	if err != nil {
-		return "", nil, err
-	}
-
-	if strings.Contains(apiUrl, "oklink") {
-		request.Header.Add("Ok-Access-Key", apiKey)
-	}
-
-	// Send GET request to Etherscan API
-	response, err := client.Do(request)
+	// Send GET request to Etherscan V2 API
+	response, err := http.Get(apiUrl)
 	if err != nil {
 		return "", nil, err
 	}
@@ -465,8 +457,8 @@ func getAbiFromEtherscan(
 		return "", nil, err
 	}
 
-	if result.Result[0].ContractName == "" {
-		return "", nil, err
+	if len(result.Result) == 0 || result.Result[0].ContractName == "" {
+		return "", nil, fmt.Errorf("no contract found")
 	}
 
 	// Extract ABI from interface{} type
@@ -478,50 +470,6 @@ func getAbiFromEtherscan(
 	}
 
 	return result.Result[0].ContractName, abiJson, nil
-}
-
-func getAbiFromEtherscanNonStandard(
-	chainId, address string,
-) (string, []map[string]interface{}, error) {
-	apiUrl := fmt.Sprintf(
-		"%s?module=contract&action=getsourcecode&address=%s",
-		etherscanConfig[chainId],
-		address,
-	)
-	log.Println(apiUrl)
-
-	// Send GET request to Etherscan API
-	response, err := http.Get(apiUrl)
-	if err != nil {
-		return "", nil, err
-	}
-	defer response.Body.Close()
-
-	// Read response body
-	responseBody, err := io.ReadAll(response.Body)
-	if err != nil {
-		return "", nil, err
-	}
-
-	// Unmarshal response body JSON into interface{} type
-	var result EtherscanResponseNonStandard
-	err = json.Unmarshal(responseBody, &result)
-	if err != nil {
-		return "", nil, err
-	}
-
-	if result.Result.ContractName == "" {
-		return "", nil, err
-	}
-
-	// Extract ABI from interface{} type
-	var abiJson []map[string]interface{}
-	err = json.Unmarshal([]byte(result.Result.ABI), &abiJson)
-	if err != nil {
-		return "", nil, err
-	}
-
-	return result.Result.ContractName, abiJson, nil
 }
 
 func getAbiFromRoutescan(
